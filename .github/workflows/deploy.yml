@@ -16,10 +16,16 @@ jobs:
           username: ${{ secrets.BOTS_USER }}
           key: ${{ secrets.BOTS_SSH_KEY }}
           script: |
+            set -e
             cd ~/usgrp-admin
+            echo "=== Git Pull ==="
             git pull origin main
+            echo "=== NPM Install ==="
             npm install
+            echo "=== Clearing .next cache ==="
             rm -rf .next
+            echo "=== Building ==="
             npm run build
+            echo "=== Build completed, restarting PM2 ==="
             pm2 restart usgrp-admin || pm2 start npm --name "usgrp-admin" -- start
-            echo "Deployed at $(date)"
+            echo "=== Deployed at $(date) ==="
