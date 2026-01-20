@@ -29,8 +29,6 @@ interface UserSession {
     permissionName?: string;
 }
 
-const API_KEY = 'usgrp-admin-2026-secure-key-x7k9m2p4';
-
 export default function DashboardPage() {
     const router = useRouter();
     const [session, setSession] = useState<UserSession | null>(null);
@@ -40,45 +38,49 @@ export default function DashboardPage() {
     const [apiConnected, setApiConnected] = useState(false);
 
     useEffect(() => {
-        // Check auth
-        fetch('/api/auth/session')
-            .then(res => res.json())
-            .then(async (data) => {
-                if (!data.authenticated) {
-                    router.push('/');
-                    return;
-                }
-                setSession(data);
+        // Check auth and sync permissions
+        Promise.all([
+            fetch('/api/auth/session').then(r => r.json()),
+            fetch('/api/bot/permissions', { method: 'POST' }).then(r => r.json()).catch(() => null)
+        ]).then(async ([authData, permData]) => {
+            if (!authData.authenticated) {
+                router.push('/');
+                return;
+            }
 
-                // Fetch stats from bot API
-                try {
-                    const statsRes = await fetch('http://localhost:3003/api/stats', {
-                        headers: { 'X-Admin-Key': API_KEY }
-                    });
-                    if (statsRes.ok) {
-                        const statsData = await statsRes.json();
-                        setStats(statsData);
-                        setApiConnected(true);
-                    }
-                } catch (e) {
-                    console.log('Bot API not available');
-                }
-
-                // Fetch recent cases
-                try {
-                    const casesRes = await fetch('http://localhost:3003/api/cases?limit=5', {
-                        headers: { 'X-Admin-Key': API_KEY }
-                    });
-                    if (casesRes.ok) {
-                        const casesData = await casesRes.json();
-                        setRecentCases(casesData);
-                    }
-                } catch (e) {
-                    console.log('Could not fetch cases');
-                }
-
-                setLoading(false);
+            // Merge session with permissions
+            setSession({
+                ...authData,
+                permissionLevel: permData?.permissionLevel || 1,
+                permissionName: permData?.permissionName || 'MODERATOR',
+                discordId: permData?.discordId
             });
+
+            // Fetch stats from server-side proxy
+            try {
+                const statsRes = await fetch('/api/bot/stats');
+                if (statsRes.ok) {
+                    const statsData = await statsRes.json();
+                    setStats(statsData);
+                    setApiConnected(true);
+                }
+            } catch (e) {
+                console.log('Bot API not available');
+            }
+
+            // Fetch recent cases
+            try {
+                const casesRes = await fetch('/api/bot/cases');
+                if (casesRes.ok) {
+                    const casesData = await casesRes.json();
+                    setRecentCases(casesData);
+                }
+            } catch (e) {
+                console.log('Could not fetch cases');
+            }
+
+            setLoading(false);
+        });
     }, [router]);
 
     const handleLogout = async () => {
@@ -151,8 +153,8 @@ export default function DashboardPage() {
                             key={item.label}
                             href={item.href}
                             className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${item.active
-                                    ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20'
-                                    : 'text-gray-400 hover:bg-white/5 hover:text-white'
+                                ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20'
+                                : 'text-gray-400 hover:bg-white/5 hover:text-white'
                                 }`}
                         >
                             <span className="text-lg">{item.icon}</span>
