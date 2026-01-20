@@ -7,6 +7,7 @@ interface SidebarProps {
     session: {
         email?: string;
         permissionName?: string;
+        discordId?: string;
     } | null;
     onLogout: () => void;
 }
@@ -16,15 +17,21 @@ interface NavItem {
     href: string;
     icon: string;
     external?: boolean;
+    botDevOnly?: boolean;
 }
 
 interface NavSection {
     title: string;
     items: NavItem[];
+    botDevOnly?: boolean;
 }
+
+// Bot Developer Discord ID
+const BOT_DEVELOPER_ID = '723199054514749450';
 
 export default function Sidebar({ session, onLogout }: SidebarProps) {
     const pathname = usePathname();
+    const isBotDeveloper = session?.discordId === BOT_DEVELOPER_ID;
 
     const navSections: NavSection[] = [
         {
@@ -60,7 +67,21 @@ export default function Sidebar({ session, onLogout }: SidebarProps) {
                 { label: 'Recordings', href: 'https://recordings.usgrp.xyz', icon: '↗', external: true },
             ],
         },
+        // Bot Developer section - only visible to bot developer
+        {
+            title: 'Developer',
+            botDevOnly: true,
+            items: [
+                { label: 'Bot Dev Console', href: '/bot-dev', icon: '🛠️', botDevOnly: true },
+            ],
+        },
     ];
+
+    // Filter sections based on permissions
+    const visibleSections = navSections.filter(section => {
+        if (section.botDevOnly && !isBotDeveloper) return false;
+        return true;
+    });
 
     return (
         <aside className="admin-sidebar">
@@ -75,28 +96,33 @@ export default function Sidebar({ session, onLogout }: SidebarProps) {
             </div>
 
             <nav className="sidebar-nav">
-                {navSections.map((section) => (
+                {visibleSections.map((section) => (
                     <div key={section.title} className="nav-section">
-                        <div className="nav-section-title">{section.title}</div>
-                        {section.items.map((item) => {
-                            const isActive = pathname === item.href;
-                            const LinkComponent = item.external ? 'a' : Link;
-                            const linkProps = item.external
-                                ? { href: item.href, target: '_blank', rel: 'noopener noreferrer' }
-                                : { href: item.href };
+                        <div className="nav-section-title" style={section.botDevOnly ? { color: 'var(--gov-gold)' } : undefined}>
+                            {section.title}
+                        </div>
+                        {section.items
+                            .filter(item => !item.botDevOnly || isBotDeveloper)
+                            .map((item) => {
+                                const isActive = pathname === item.href;
+                                const LinkComponent = item.external ? 'a' : Link;
+                                const linkProps = item.external
+                                    ? { href: item.href, target: '_blank', rel: 'noopener noreferrer' }
+                                    : { href: item.href };
 
-                            return (
-                                <LinkComponent
-                                    key={item.label}
-                                    {...linkProps}
-                                    className={`nav-item ${isActive ? 'active' : ''}`}
-                                >
-                                    <span className="nav-item-icon">{item.icon}</span>
-                                    {item.label}
-                                    {item.external && <span className="nav-external">↗</span>}
-                                </LinkComponent>
-                            );
-                        })}
+                                return (
+                                    <LinkComponent
+                                        key={item.label}
+                                        {...linkProps}
+                                        className={`nav-item ${isActive ? 'active' : ''}`}
+                                        style={item.botDevOnly ? { color: 'var(--gov-gold)' } : undefined}
+                                    >
+                                        <span className="nav-item-icon">{item.icon}</span>
+                                        {item.label}
+                                        {item.external && <span className="nav-external">↗</span>}
+                                    </LinkComponent>
+                                );
+                            })}
                     </div>
                 ))}
             </nav>
@@ -104,7 +130,9 @@ export default function Sidebar({ session, onLogout }: SidebarProps) {
             <div className="sidebar-footer">
                 <div className="user-info">
                     <div className="user-email">{session?.email}</div>
-                    <div className="user-role">{session?.permissionName || 'MODERATOR'}</div>
+                    <div className="user-role" style={isBotDeveloper ? { color: 'var(--gov-gold)' } : undefined}>
+                        {isBotDeveloper ? '🛠️ BOT_DEVELOPER' : session?.permissionName || 'MODERATOR'}
+                    </div>
                 </div>
                 <button onClick={onLogout} className="logout-btn">
                     Sign Out

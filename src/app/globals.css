@@ -35,6 +35,14 @@
   --action-ban: #f85149;
   --action-unban: #3fb950;
 
+  /* Government Theme Colors */
+  --gov-navy: #1a2744;
+  --gov-navy-dark: #0d1520;
+  --gov-gold: #d4a84b;
+  --gov-gold-light: #e8c97a;
+  --gov-crimson: #b22234;
+  --gov-white: #ffffff;
+
   /* Spacing */
   --spacing-xs: 4px;
   --spacing-sm: 8px;
@@ -836,4 +844,326 @@ a:hover {
   width: 100%;
   padding: var(--spacing-md);
   margin-top: var(--spacing-sm);
+}
+
+/* =====================================================
+   Government-Themed Login Page
+   ===================================================== */
+
+.login-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, var(--gov-navy-dark) 0%, var(--gov-navy) 50%, #1e3a5f 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-lg);
+  position: relative;
+  overflow: hidden;
+}
+
+.login-bg-pattern {
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 20% 80%, rgba(212, 168, 75, 0.03) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(178, 34, 52, 0.03) 0%, transparent 50%),
+    repeating-linear-gradient(0deg, transparent, transparent 50px, rgba(255, 255, 255, 0.01) 50px, rgba(255, 255, 255, 0.01) 51px),
+    repeating-linear-gradient(90deg, transparent, transparent 50px, rgba(255, 255, 255, 0.01) 50px, rgba(255, 255, 255, 0.01) 51px);
+  pointer-events: none;
+}
+
+.login-watermark {
+  position: absolute;
+  right: -100px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 500px;
+  height: 500px;
+  opacity: 0.03;
+  color: var(--gov-gold);
+  pointer-events: none;
+}
+
+.seal-svg {
+  width: 100%;
+  height: 100%;
+}
+
+.login-container-gov {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 440px;
+}
+
+.login-banner {
+  position: relative;
+  margin-bottom: -1px;
+}
+
+.banner-stripes {
+  display: flex;
+  height: 6px;
+  border-radius: 8px 8px 0 0;
+  overflow: hidden;
+}
+
+.banner-stripes .stripe {
+  flex: 1;
+}
+
+.banner-stripes .red {
+  background: var(--gov-crimson);
+}
+
+.banner-stripes .white {
+  background: var(--gov-white);
+}
+
+.banner-stripes .blue {
+  background: var(--gov-navy);
+}
+
+.banner-content {
+  background: linear-gradient(180deg, #1e3a5f 0%, var(--gov-navy) 100%);
+  padding: var(--spacing-lg) var(--spacing-xl);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+  border-left: 1px solid rgba(212, 168, 75, 0.2);
+  border-right: 1px solid rgba(212, 168, 75, 0.2);
+}
+
+.gov-shield {
+  width: 56px;
+  height: 56px;
+  background: linear-gradient(135deg, var(--gov-gold) 0%, var(--gov-gold-light) 50%, var(--gov-gold) 100%);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.shield-icon {
+  font-size: 28px;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+}
+
+.gov-title {
+  flex: 1;
+}
+
+.gov-label {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  color: var(--gov-gold);
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.gov-title h1 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--gov-white);
+  letter-spacing: 0.5px;
+  margin: 0;
+}
+
+.gov-sublabel {
+  display: block;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+  margin-top: 2px;
+  letter-spacing: 0.5px;
+}
+
+.login-card-gov {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-default);
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  overflow: hidden;
+}
+
+.login-card-header {
+  padding: var(--spacing-lg);
+  text-align: center;
+  border-bottom: 1px solid var(--border-default);
+}
+
+.classification-banner {
+  display: inline-block;
+  background: rgba(212, 168, 75, 0.1);
+  border: 1px solid rgba(212, 168, 75, 0.3);
+  border-radius: 4px;
+  padding: 4px 12px;
+  margin-bottom: var(--spacing-md);
+}
+
+.classification-banner span {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  color: var(--gov-gold);
+  text-transform: uppercase;
+}
+
+.login-card-header h2 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.login-card-header p {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.login-form-gov {
+  padding: var(--spacing-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.form-label-gov {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.label-icon {
+  font-size: 14px;
+}
+
+.form-input-gov {
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+
+.form-input-gov:focus {
+  outline: none;
+  border-color: var(--gov-gold);
+  box-shadow: 0 0 0 3px rgba(212, 168, 75, 0.15);
+}
+
+.form-input-gov::placeholder {
+  color: var(--text-muted);
+}
+
+.login-error {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  background: rgba(248, 81, 73, 0.1);
+  border: 1px solid rgba(248, 81, 73, 0.3);
+  border-radius: var(--radius-md);
+  color: var(--accent-danger);
+  font-size: 13px;
+}
+
+.error-icon {
+  font-size: 14px;
+}
+
+.btn-login-gov {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  width: 100%;
+  padding: 14px 24px;
+  background: linear-gradient(135deg, var(--gov-gold) 0%, #c49a40 100%);
+  border: none;
+  border-radius: var(--radius-md);
+  color: var(--gov-navy-dark);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(212, 168, 75, 0.25);
+  margin-top: var(--spacing-sm);
+}
+
+.btn-login-gov:hover {
+  background: linear-gradient(135deg, var(--gov-gold-light) 0%, var(--gov-gold) 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(212, 168, 75, 0.35);
+}
+
+.btn-login-gov:active {
+  transform: translateY(0);
+}
+
+.btn-login-gov:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.loading-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(13, 21, 32, 0.3);
+  border-top-color: var(--gov-navy-dark);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.login-footer {
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-top: 1px solid var(--border-default);
+  background: var(--bg-tertiary);
+}
+
+.security-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-sm);
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.notice-icon {
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.login-info {
+  text-align: center;
+  margin-top: var(--spacing-lg);
+}
+
+.login-info p {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
 }

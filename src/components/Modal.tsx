@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 
 interface ModalProps {
     isOpen: boolean;
@@ -35,8 +36,8 @@ export default function Modal({ isOpen, onClose, title, size = 'md', children }:
         xl: 'modal-xl',
     };
 
-    return (
-        <div className="modal-backdrop" onClick={onClose}>
+    const modalContent = (
+        <div className="modal-overlay" onClick={onClose}>
             <div
                 className={`modal-content ${sizeClasses[size]}`}
                 onClick={(e) => e.stopPropagation()}
@@ -53,4 +54,11 @@ export default function Modal({ isOpen, onClose, title, size = 'md', children }:
             </div>
         </div>
     );
+
+    // Use portal to render modal at document body level
+    if (typeof window !== 'undefined') {
+        return createPortal(modalContent, document.body);
+    }
+
+    return modalContent;
 }
