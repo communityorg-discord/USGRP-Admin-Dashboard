@@ -13,6 +13,9 @@ export async function verifyCredentials(email: string, password: string): Promis
             pass: password,
         },
         logger: false,
+        tls: {
+            rejectUnauthorized: false, // Accept self-signed certs
+        },
     });
 
     try {
