@@ -30,34 +30,34 @@ export default function Sidebar({ session, onLogout }: SidebarProps) {
         {
             title: 'Main',
             items: [
-                { label: 'Dashboard', href: '/dashboard', icon: '📊' },
-                { label: 'User Lookup', href: '/users', icon: '🔍' },
-                { label: 'Cases', href: '/cases', icon: '📋' },
-                { label: 'Tickets', href: '/tickets', icon: '🎫' },
-                { label: 'Analytics', href: '/analytics', icon: '📈' },
+                { label: 'Dashboard', href: '/dashboard', icon: '⌂' },
+                { label: 'User Lookup', href: '/users', icon: '⌕' },
+                { label: 'Cases', href: '/cases', icon: '☰' },
+                { label: 'Tickets', href: '/tickets', icon: '✉' },
+                { label: 'Analytics', href: '/analytics', icon: '◔' },
             ],
         },
         {
             title: 'Administration',
             items: [
-                { label: 'Staff', href: '/staff-dashboard', icon: '👥' },
-                { label: 'Government', href: '/government', icon: '🏛️' },
-                { label: 'Appeals', href: '/appeals', icon: '⚖️' },
-                { label: 'Backups', href: '/backups', icon: '💾' },
+                { label: 'Staff', href: '/staff-dashboard', icon: '⊞' },
+                { label: 'Government', href: '/government', icon: '⚑' },
+                { label: 'Appeals', href: '/appeals', icon: '⚖' },
+                { label: 'Backups', href: '/backups', icon: '⟳' },
             ],
         },
         {
             title: 'Tools',
             items: [
-                { label: 'Commands', href: '/commands', icon: '⌨️' },
-                { label: 'Mail Composer', href: '/mail', icon: '✉️' },
+                { label: 'Commands', href: '/commands', icon: '⌘' },
+                { label: 'Mail Composer', href: '/mail', icon: '✎' },
             ],
         },
         {
             title: 'External',
             items: [
-                { label: 'Webmail', href: 'https://mail.usgrp.xyz', icon: '📧', external: true },
-                { label: 'Recordings', href: 'https://recordings.usgrp.xyz', icon: '🎬', external: true },
+                { label: 'Webmail', href: 'https://mail.usgrp.xyz', icon: '↗', external: true },
+                { label: 'Recordings', href: 'https://recordings.usgrp.xyz', icon: '↗', external: true },
             ],
         },
     ];
@@ -66,7 +66,7 @@ export default function Sidebar({ session, onLogout }: SidebarProps) {
         <aside className="admin-sidebar">
             <div className="sidebar-header">
                 <div className="sidebar-logo">
-                    <div className="sidebar-logo-icon">🛡️</div>
+                    <div className="sidebar-logo-icon">U</div>
                     <div className="sidebar-logo-text">
                         <h1>USGRP Admin</h1>
                         <span>admin.usgrp.xyz</span>
@@ -107,7 +107,7 @@ export default function Sidebar({ session, onLogout }: SidebarProps) {
                     <div className="user-role">{session?.permissionName || 'MODERATOR'}</div>
                 </div>
                 <button onClick={onLogout} className="logout-btn">
-                    🚪 Sign Out
+                    Sign Out
                 </button>
             </div>
         </aside>
