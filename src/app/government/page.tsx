@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
+import Sidebar from '@/components/Sidebar';
 
 interface Official {
     govId: string;
@@ -50,66 +50,13 @@ export default function GovernmentPage() {
         router.push('/');
     };
 
-    const navItems = [
-        { label: 'Dashboard', href: '/dashboard', icon: '📊' },
-        { label: 'User Lookup', href: '/users', icon: '🔍' },
-        { label: 'Cases', href: '/cases', icon: '📋' },
-        { label: 'Tickets', href: '/tickets', icon: '🎫' },
-        { label: 'Analytics', href: '/analytics', icon: '📈' },
-    ];
-
-    const adminItems = [
-        { label: 'Staff', href: '/staff-dashboard', icon: '👥' },
-        { label: 'Government', href: '/government', icon: '🏛️', active: true },
-        { label: 'Appeals', href: '/appeals', icon: '⚖️' },
-        { label: 'Backups', href: '/backups', icon: '💾' },
-    ];
-
-    // Group officials by category
     const executiveOffice = officials.filter(o => ['president', 'vicePresident', 'whiteHouseChiefOfStaff'].includes(o.positionKey) || o.positionKey.startsWith('wh'));
     const cabinet = officials.filter(o => o.positionKey.startsWith('secretaryOf'));
     const agencies = officials.filter(o => !executiveOffice.includes(o) && !cabinet.includes(o));
 
     return (
         <div className="admin-layout">
-            <aside className="admin-sidebar">
-                <div className="sidebar-header">
-                    <div className="sidebar-logo">
-                        <div className="sidebar-logo-icon">🛡️</div>
-                        <div className="sidebar-logo-text">
-                            <h1>USGRP Admin</h1>
-                            <span>admin.usgrp.xyz</span>
-                        </div>
-                    </div>
-                </div>
-                <nav className="sidebar-nav">
-                    <div className="nav-section">
-                        <div className="nav-section-title">Main</div>
-                        {navItems.map((item) => (
-                            <Link key={item.label} href={item.href} className="nav-item">
-                                <span className="nav-item-icon">{item.icon}</span>
-                                {item.label}
-                            </Link>
-                        ))}
-                    </div>
-                    <div className="nav-section">
-                        <div className="nav-section-title">Administration</div>
-                        {adminItems.map((item) => (
-                            <Link key={item.label} href={item.href} className={`nav-item ${item.active ? 'active' : ''}`}>
-                                <span className="nav-item-icon">{item.icon}</span>
-                                {item.label}
-                            </Link>
-                        ))}
-                    </div>
-                </nav>
-                <div className="sidebar-footer">
-                    <div className="user-info">
-                        <div className="user-email">{session?.email}</div>
-                        <div className="user-role">{session?.permissionName || 'MODERATOR'}</div>
-                    </div>
-                    <button onClick={handleLogout} className="logout-btn">🚪 Sign Out</button>
-                </div>
-            </aside>
+            <Sidebar session={session} onLogout={handleLogout} />
 
             <main className="admin-main">
                 <div style={{ maxWidth: '1200px' }}>
@@ -129,7 +76,6 @@ export default function GovernmentPage() {
                         <div className="card"><div className="empty-state">Loading officials...</div></div>
                     ) : (
                         <>
-                            {/* Executive Office */}
                             {executiveOffice.length > 0 && (
                                 <div className="card" style={{ marginBottom: '24px' }}>
                                     <div className="card-header">
@@ -157,7 +103,6 @@ export default function GovernmentPage() {
                                 </div>
                             )}
 
-                            {/* Cabinet */}
                             {cabinet.length > 0 && (
                                 <div className="card" style={{ marginBottom: '24px' }}>
                                     <div className="card-header">
@@ -185,11 +130,10 @@ export default function GovernmentPage() {
                                 </div>
                             )}
 
-                            {/* Agencies */}
                             {agencies.length > 0 && (
                                 <div className="card">
                                     <div className="card-header">
-                                        <h3 className="card-title">🏢 Agency Directors & Other ({agencies.length})</h3>
+                                        <h3 className="card-title">🏢 Other Officials ({agencies.length})</h3>
                                     </div>
                                     <div className="official-grid">
                                         {agencies.map((o) => (

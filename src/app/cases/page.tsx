@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
+import Sidebar from '@/components/Sidebar';
+import Modal from '@/components/Modal';
 
 interface Case {
     case_id: string;
@@ -11,7 +12,6 @@ interface Case {
     action_type: string;
     reason: string;
     created_at: string;
-    moderator_id: string;
     moderator_tag: string;
     status: string;
 }
@@ -21,8 +21,8 @@ export default function CasesPage() {
     const [session, setSession] = useState<{ email?: string; permissionName?: string } | null>(null);
     const [cases, setCases] = useState<Case[]>([]);
     const [loading, setLoading] = useState(true);
-    const [filter, setFilter] = useState('');
-    const [search, setSearch] = useState('');
+    const [filter, setFilter] = useState<string>('all');
+    const [selectedCase, setSelectedCase] = useState<Case | null>(null);
 
     useEffect(() => {
         fetch('/api/auth/session')
@@ -36,11 +36,8 @@ export default function CasesPage() {
 
                 try {
                     const res = await fetch('/api/bot/cases');
-                    if (res.ok) {
-                        setCases(await res.json());
-                    }
+                    if (res.ok) setCases(await res.json());
                 } catch { }
-
                 setLoading(false);
             });
     }, [router]);
@@ -50,108 +47,43 @@ export default function CasesPage() {
         router.push('/');
     };
 
-    const filteredCases = cases.filter(c => {
-        const matchesFilter = !filter || c.action_type === filter;
-        const matchesSearch = !search ||
-            c.user_tag?.toLowerCase().includes(search.toLowerCase()) ||
-            c.case_id?.toLowerCase().includes(search.toLowerCase()) ||
-            c.reason?.toLowerCase().includes(search.toLowerCase());
-        return matchesFilter && matchesSearch;
-    });
-
-    const actionTypes = [...new Set(cases.map(c => c.action_type))];
-
-    const navItems = [
-        { label: 'Dashboard', href: '/dashboard', icon: '📊' },
-        { label: 'User Lookup', href: '/users', icon: '🔍' },
-        { label: 'Cases', href: '/cases', icon: '📋', active: true },
-        { label: 'Tickets', href: '/tickets', icon: '🎫' },
-        { label: 'Analytics', href: '/analytics', icon: '📈' },
-    ];
-
-    const adminItems = [
-        { label: 'Staff', href: '/staff-dashboard', icon: '👥' },
-        { label: 'Appeals', href: '/appeals', icon: '⚖️' },
-        { label: 'Backups', href: '/backups', icon: '💾' },
-    ];
+    const filteredCases = filter === 'all' ? cases : cases.filter(c => c.action_type === filter);
 
     return (
         <div className="admin-layout">
-            <aside className="admin-sidebar">
-                <div className="sidebar-header">
-                    <div className="sidebar-logo">
-                        <div className="sidebar-logo-icon">🛡️</div>
-                        <div className="sidebar-logo-text">
-                            <h1>USGRP Admin</h1>
-                            <span>admin.usgrp.xyz</span>
-                        </div>
-                    </div>
-                </div>
-                <nav className="sidebar-nav">
-                    <div className="nav-section">
-                        <div className="nav-section-title">Main</div>
-                        {navItems.map((item) => (
-                            <Link key={item.label} href={item.href} className={`nav-item ${item.active ? 'active' : ''}`}>
-                                <span className="nav-item-icon">{item.icon}</span>
-                                {item.label}
-                            </Link>
-                        ))}
-                    </div>
-                    <div className="nav-section">
-                        <div className="nav-section-title">Administration</div>
-                        {adminItems.map((item) => (
-                            <Link key={item.label} href={item.href} className="nav-item">
-                                <span className="nav-item-icon">{item.icon}</span>
-                                {item.label}
-                            </Link>
-                        ))}
-                    </div>
-                </nav>
-                <div className="sidebar-footer">
-                    <div className="user-info">
-                        <div className="user-email">{session?.email}</div>
-                        <div className="user-role">{session?.permissionName || 'MODERATOR'}</div>
-                    </div>
-                    <button onClick={handleLogout} className="logout-btn">🚪 Sign Out</button>
-                </div>
-            </aside>
+            <Sidebar session={session} onLogout={handleLogout} />
 
             <main className="admin-main">
                 <div style={{ maxWidth: '1200px' }}>
                     <div className="page-header">
                         <h1 className="page-title">Cases</h1>
-                        <p className="page-subtitle">Browse and manage moderation cases</p>
+                        <p className="page-subtitle">View and manage moderation cases</p>
                     </div>
 
                     <div className="card" style={{ marginBottom: '24px' }}>
-                        <div style={{ display: 'flex', gap: '12px' }}>
-                            <input
-                                type="text"
-                                placeholder="Search by user, case ID, or reason..."
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                                style={{ flex: 1, padding: '12px 16px', background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'white', fontSize: '14px' }}
-                            />
-                            <select
-                                value={filter}
-                                onChange={(e) => setFilter(e.target.value)}
-                                style={{ padding: '12px 16px', background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'white', fontSize: '14px', minWidth: '150px' }}
-                            >
-                                <option value="">All Types</option>
-                                {actionTypes.map(t => <option key={t} value={t}>{t.toUpperCase()}</option>)}
-                            </select>
+                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                            {['all', 'warn', 'mute', 'kick', 'ban', 'unban'].map((f) => (
+                                <button
+                                    key={f}
+                                    className={`quick-action-btn ${filter === f ? f : ''}`}
+                                    onClick={() => setFilter(f)}
+                                    style={filter === f ? { borderColor: 'var(--accent-primary)', color: 'var(--accent-primary)' } : {}}
+                                >
+                                    {f.charAt(0).toUpperCase() + f.slice(1)}
+                                </button>
+                            ))}
                         </div>
                     </div>
 
                     <div className="card">
                         <div className="card-header">
-                            <h3 className="card-title">Cases ({filteredCases.length})</h3>
+                            <h3 className="card-title">📋 Cases ({filteredCases.length})</h3>
                         </div>
                         {loading ? (
                             <div className="empty-state">Loading cases...</div>
                         ) : filteredCases.length > 0 ? (
                             filteredCases.map((c) => (
-                                <div key={c.case_id} className="case-item">
+                                <div key={c.case_id} className="case-item" style={{ cursor: 'pointer' }} onClick={() => setSelectedCase(c)}>
                                     <div className="case-left">
                                         <span className={`case-badge badge-${c.action_type}`}>{c.action_type.toUpperCase()}</span>
                                         <div className="case-info">
@@ -162,7 +94,6 @@ export default function CasesPage() {
                                     <div className="case-right">
                                         <div className="case-id">{c.case_id}</div>
                                         <div className="case-date">{new Date(c.created_at).toLocaleDateString()}</div>
-                                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>by {c.moderator_tag}</div>
                                     </div>
                                 </div>
                             ))
@@ -172,6 +103,35 @@ export default function CasesPage() {
                     </div>
                 </div>
             </main>
+
+            <Modal isOpen={!!selectedCase} onClose={() => setSelectedCase(null)} title="Case Details" size="md">
+                {selectedCase && (
+                    <div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
+                            <div>
+                                <div className="form-label">User</div>
+                                <div style={{ color: 'var(--text-primary)' }}>{selectedCase.user_tag}</div>
+                            </div>
+                            <div>
+                                <div className="form-label">Action</div>
+                                <span className={`case-badge badge-${selectedCase.action_type}`}>{selectedCase.action_type.toUpperCase()}</span>
+                            </div>
+                            <div>
+                                <div className="form-label">Moderator</div>
+                                <div style={{ color: 'var(--text-primary)' }}>{selectedCase.moderator_tag}</div>
+                            </div>
+                            <div>
+                                <div className="form-label">Date</div>
+                                <div style={{ color: 'var(--text-primary)' }}>{new Date(selectedCase.created_at).toLocaleString()}</div>
+                            </div>
+                        </div>
+                        <div>
+                            <div className="form-label">Reason</div>
+                            <div style={{ color: 'var(--text-primary)' }}>{selectedCase.reason || 'No reason provided'}</div>
+                        </div>
+                    </div>
+                )}
+            </Modal>
         </div>
     );
 }
