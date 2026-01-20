@@ -790,7 +790,9 @@ body {
   border-bottom: 1px solid var(--border-color);
 }
 
-.welcome-left {}
+.welcome-left {
+  /* Container for greeting - no styles needed */
+}
 
 .welcome-greeting {
   font-size: 32px;
