@@ -193,12 +193,7 @@ export default function DashboardPage() {
                                 {recentCases.length > 0 ? recentCases.slice(0, 5).map((c) => (
                                     <div key={c.case_id} className="flex items-center justify-between p-3 rounded-lg bg-white/5">
                                         <div className="flex items-center gap-3">
-                                            <span className={`px-2 py-0.5 rounded text-xs font-semibold ${c.action_type === 'warn' ? 'bg-yellow-500/20 text-yellow-400' :
-                                                    c.action_type === 'mute' ? 'bg-orange-500/20 text-orange-400' :
-                                                        c.action_type === 'kick' ? 'bg-red-500/20 text-red-400' :
-                                                            c.action_type === 'ban' ? 'bg-red-600/20 text-red-300' :
-                                                                'bg-blue-500/20 text-blue-400'
-                                                }`}>
+                                            <span className={`px-2 py-0.5 rounded text-xs font-semibold badge-${c.action_type}`}>
                                                 {c.action_type.toUpperCase()}
                                             </span>
                                             <div>
