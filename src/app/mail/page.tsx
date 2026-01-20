@@ -51,7 +51,7 @@ export default function MailPage() {
             <Sidebar session={session} onLogout={logout} />
 
             <main className="admin-main">
-                <div style={{ maxWidth: '800px', width: '100%' }}>
+                <div>
                     <div className="page-header">
                         <h1 className="page-title">Mail Composer</h1>
                         <p className="page-subtitle">Send emails from your USGRP account</p>

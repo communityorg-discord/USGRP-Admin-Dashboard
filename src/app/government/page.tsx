@@ -45,7 +45,7 @@ export default function GovernmentPage() {
             <Sidebar session={session} onLogout={logout} />
 
             <main className="admin-main">
-                <div style={{ maxWidth: '1200px', width: '100%' }}>
+                <div>
                     <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                         <div>
                             <h1 className="page-title">Government Officials</h1>

@@ -116,7 +116,7 @@ export default function BotDevPage() {
             <Sidebar session={session} onLogout={logout} />
 
             <main className="admin-main">
-                <div style={{ maxWidth: '1400px', width: '100%' }}>
+                <div>
                     <div className="page-header">
                         <h1 className="page-title">🛠️ Bot Developer Console</h1>
                         <p className="page-subtitle">System monitoring, API management, and deployment controls</p>

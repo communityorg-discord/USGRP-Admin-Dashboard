@@ -62,7 +62,7 @@ export default function UsersPage() {
             <Sidebar session={session} onLogout={logout} />
 
             <main className="admin-main">
-                <div style={{ maxWidth: '1000px', width: '100%' }}>
+                <div>
                     <div className="page-header">
                         <h1 className="page-title">User Lookup</h1>
                         <p className="page-subtitle">Search by Discord ID to view moderation history</p>

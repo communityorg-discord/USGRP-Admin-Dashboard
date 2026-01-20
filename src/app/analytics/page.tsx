@@ -24,7 +24,7 @@ export default function AnalyticsPage() {
             <Sidebar session={session} onLogout={logout} />
 
             <main className="admin-main">
-                <div style={{ maxWidth: '1200px', width: '100%' }}>
+                <div>
                     <div className="page-header">
                         <h1 className="page-title">Analytics</h1>
                         <p className="page-subtitle">Server activity and engagement metrics</p>
