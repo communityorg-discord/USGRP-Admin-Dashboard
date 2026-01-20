@@ -1,41 +1,29 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
+import { useSession } from '@/hooks/useSession';
 
 export default function StaffDashboardPage() {
-    const router = useRouter();
-    const [session, setSession] = useState<{ email?: string; permissionName?: string } | null>(null);
+    const { session, loading: sessionLoading, logout } = useSession();
     const [staff, setStaff] = useState<Array<{ id: number; discord_id: string; email: string; display_name: string; linked_at: string }>>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetch('/api/auth/session')
-            .then(res => res.json())
-            .then(async (data) => {
-                if (!data.authenticated) {
-                    router.push('/');
-                    return;
-                }
-                setSession(data);
+        if (session) {
+            fetch('/api/bot/staff')
+                .then(r => r.ok ? r.json() : [])
+                .then(setStaff)
+                .catch(() => setStaff([]))
+                .finally(() => setLoading(false));
+        }
+    }, [session]);
 
-                try {
-                    const res = await fetch('/api/bot/staff');
-                    if (res.ok) setStaff(await res.json());
-                } catch { }
-                setLoading(false);
-            });
-    }, [router]);
-
-    const handleLogout = async () => {
-        await fetch('/api/auth/logout', { method: 'POST' });
-        router.push('/');
-    };
+    if (sessionLoading) return <div className="admin-layout"><div className="admin-main" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Loading...</div></div>;
 
     return (
         <div className="admin-layout">
-            <Sidebar session={session} onLogout={handleLogout} />
+            <Sidebar session={session} onLogout={logout} />
 
             <main className="admin-main">
                 <div style={{ maxWidth: '1000px' }}>

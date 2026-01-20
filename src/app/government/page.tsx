@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
+import { useSession } from '@/hooks/useSession';
 
 interface Official {
     govId: string;
@@ -16,39 +16,25 @@ interface Official {
 }
 
 export default function GovernmentPage() {
-    const router = useRouter();
-    const [session, setSession] = useState<{ email?: string; permissionName?: string } | null>(null);
+    const { session, loading: sessionLoading, logout } = useSession();
     const [officials, setOfficials] = useState<Official[]>([]);
     const [loading, setLoading] = useState(true);
     const [lastUpdated, setLastUpdated] = useState<string | null>(null);
 
     useEffect(() => {
-        fetch('/api/auth/session')
-            .then(res => res.json())
-            .then(async (data) => {
-                if (!data.authenticated) {
-                    router.push('/');
-                    return;
-                }
-                setSession(data);
+        if (session) {
+            fetch('/api/bot/government')
+                .then(r => r.ok ? r.json() : { officials: [] })
+                .then(data => {
+                    setOfficials(data.officials || []);
+                    setLastUpdated(data.lastUpdated);
+                })
+                .catch(() => { })
+                .finally(() => setLoading(false));
+        }
+    }, [session]);
 
-                try {
-                    const res = await fetch('/api/bot/government');
-                    if (res.ok) {
-                        const govData = await res.json();
-                        setOfficials(govData.officials || []);
-                        setLastUpdated(govData.lastUpdated);
-                    }
-                } catch { }
-
-                setLoading(false);
-            });
-    }, [router]);
-
-    const handleLogout = async () => {
-        await fetch('/api/auth/logout', { method: 'POST' });
-        router.push('/');
-    };
+    if (sessionLoading) return <div className="admin-layout"><div className="admin-main" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Loading...</div></div>;
 
     const executiveOffice = officials.filter(o => ['president', 'vicePresident', 'whiteHouseChiefOfStaff'].includes(o.positionKey) || o.positionKey.startsWith('wh'));
     const cabinet = officials.filter(o => o.positionKey.startsWith('secretaryOf'));
@@ -56,7 +42,7 @@ export default function GovernmentPage() {
 
     return (
         <div className="admin-layout">
-            <Sidebar session={session} onLogout={handleLogout} />
+            <Sidebar session={session} onLogout={logout} />
 
             <main className="admin-main">
                 <div style={{ maxWidth: '1200px' }}>

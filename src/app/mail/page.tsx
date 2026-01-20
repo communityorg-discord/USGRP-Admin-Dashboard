@@ -1,139 +1,128 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import Sidebar from '@/components/Sidebar';
+import { useSession } from '@/hooks/useSession';
 
 export default function MailPage() {
-    const router = useRouter();
-    const [session, setSession] = useState<{ email?: string; permissionName?: string } | null>(null);
-    const [form, setForm] = useState({
-        to: '',
-        subject: '',
-        body: '',
-    });
+    const { session, loading: sessionLoading, logout } = useSession();
+    const [to, setTo] = useState('');
+    const [subject, setSubject] = useState('');
+    const [body, setBody] = useState('');
     const [sending, setSending] = useState(false);
-    const [result, setResult] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+    const [status, setStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
-    useEffect(() => {
-        fetch('/api/auth/session')
-            .then(res => res.json())
-            .then(data => {
-                if (!data.authenticated) {
-                    router.push('/');
-                } else {
-                    setSession(data);
-                }
-            });
-    }, [router]);
+    const handleSend = async () => {
+        if (!to || !subject || !body) {
+            setStatus({ type: 'error', message: 'All fields are required' });
+            return;
+        }
 
-    const handleLogout = async () => {
-        await fetch('/api/auth/logout', { method: 'POST' });
-        router.push('/');
-    };
-
-    const handleSend = async (e: React.FormEvent) => {
-        e.preventDefault();
         setSending(true);
-        setResult(null);
+        setStatus(null);
 
         try {
             const res = await fetch('/api/mail/send', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    ...form,
-                    from: session?.email,
-                }),
+                body: JSON.stringify({ to, subject, body }),
             });
 
-            const data = await res.json();
-
             if (res.ok) {
-                setResult({ type: 'success', message: 'Email sent successfully!' });
-                setForm({ to: '', subject: '', body: '' });
+                setStatus({ type: 'success', message: 'Email sent successfully!' });
+                setTo('');
+                setSubject('');
+                setBody('');
             } else {
-                setResult({ type: 'error', message: data.error || 'Failed to send email' });
+                const data = await res.json();
+                setStatus({ type: 'error', message: data.error || 'Failed to send email' });
             }
         } catch {
-            setResult({ type: 'error', message: 'Connection error' });
+            setStatus({ type: 'error', message: 'Failed to send email' });
         } finally {
             setSending(false);
         }
     };
 
+    if (sessionLoading) return <div className="admin-layout"><div className="admin-main" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Loading...</div></div>;
+
     return (
         <div className="admin-layout">
-            <Sidebar session={session} onLogout={handleLogout} />
+            <Sidebar session={session} onLogout={logout} />
 
             <main className="admin-main">
                 <div style={{ maxWidth: '800px' }}>
                     <div className="page-header">
                         <h1 className="page-title">Mail Composer</h1>
-                        <p className="page-subtitle">Send emails to staff members</p>
+                        <p className="page-subtitle">Send emails from your USGRP account</p>
                     </div>
 
                     <div className="card">
-                        <form onSubmit={handleSend}>
-                            <div className="form-row">
+                        <div className="card-header">
+                            <h3 className="card-title">✉️ New Email</h3>
+                        </div>
+
+                        <div style={{ padding: '20px' }}>
+                            <div style={{ marginBottom: '16px' }}>
                                 <label className="form-label">From</label>
-                                <input
-                                    type="email"
-                                    className="form-input"
-                                    value={session?.email || ''}
-                                    disabled
-                                    style={{ opacity: 0.7 }}
-                                />
-                            </div>
-                            <div className="form-row">
-                                <label className="form-label">To *</label>
-                                <input
-                                    type="email"
-                                    className="form-input"
-                                    placeholder="recipient@usgrp.xyz"
-                                    value={form.to}
-                                    onChange={(e) => setForm({ ...form, to: e.target.value })}
-                                    required
-                                />
-                            </div>
-                            <div className="form-row">
-                                <label className="form-label">Subject *</label>
                                 <input
                                     type="text"
                                     className="form-input"
-                                    placeholder="Email subject..."
-                                    value={form.subject}
-                                    onChange={(e) => setForm({ ...form, subject: e.target.value })}
-                                    required
-                                />
-                            </div>
-                            <div className="form-row">
-                                <label className="form-label">Message *</label>
-                                <textarea
-                                    className="form-textarea"
-                                    placeholder="Write your message..."
-                                    value={form.body}
-                                    onChange={(e) => setForm({ ...form, body: e.target.value })}
-                                    required
-                                    style={{ minHeight: '200px' }}
+                                    value={session?.email || ''}
+                                    disabled
+                                    style={{ background: 'var(--bg-primary)', opacity: 0.7 }}
                                 />
                             </div>
 
-                            {result && (
-                                <div className={`alert-${result.type === 'success' ? 'success' : 'warning'}`} style={{ marginBottom: '20px', padding: '12px 16px', borderRadius: '8px', background: result.type === 'success' ? 'rgba(76, 175, 80, 0.1)' : 'rgba(244, 67, 54, 0.1)', border: `1px solid ${result.type === 'success' ? 'rgba(76, 175, 80, 0.3)' : 'rgba(244, 67, 54, 0.3)'}`, color: result.type === 'success' ? '#81c784' : '#ef5350' }}>
-                                    {result.type === 'success' ? '✓' : '✕'} {result.message}
+                            <div style={{ marginBottom: '16px' }}>
+                                <label className="form-label">To</label>
+                                <input
+                                    type="email"
+                                    className="form-input"
+                                    placeholder="recipient@example.com"
+                                    value={to}
+                                    onChange={e => setTo(e.target.value)}
+                                />
+                            </div>
+
+                            <div style={{ marginBottom: '16px' }}>
+                                <label className="form-label">Subject</label>
+                                <input
+                                    type="text"
+                                    className="form-input"
+                                    placeholder="Email subject"
+                                    value={subject}
+                                    onChange={e => setSubject(e.target.value)}
+                                />
+                            </div>
+
+                            <div style={{ marginBottom: '20px' }}>
+                                <label className="form-label">Message</label>
+                                <textarea
+                                    className="form-input"
+                                    placeholder="Write your message..."
+                                    rows={8}
+                                    value={body}
+                                    onChange={e => setBody(e.target.value)}
+                                    style={{ resize: 'vertical' }}
+                                />
+                            </div>
+
+                            {status && (
+                                <div className={status.type === 'success' ? 'alert-success' : 'alert-warning'} style={{ marginBottom: '16px' }}>
+                                    {status.message}
                                 </div>
                             )}
 
-                            <div className="form-actions" style={{ borderTop: 'none', paddingTop: 0 }}>
-                                <button type="button" className="btn btn-secondary" onClick={() => setForm({ to: '', subject: '', body: '' })}>
-                                    Clear
-                                </button>
-                                <button type="submit" className="btn btn-primary" disabled={sending}>
+                            <div style={{ display: 'flex', gap: '12px' }}>
+                                <button className="btn btn-primary" onClick={handleSend} disabled={sending}>
                                     {sending ? 'Sending...' : '📤 Send Email'}
                                 </button>
+                                <button className="btn btn-secondary" onClick={() => { setTo(''); setSubject(''); setBody(''); setStatus(null); }}>
+                                    Clear
+                                </button>
                             </div>
-                        </form>
+                        </div>
                     </div>
                 </div>
             </main>

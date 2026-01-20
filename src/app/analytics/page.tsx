@@ -1,39 +1,27 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
+import { useSession } from '@/hooks/useSession';
 
 export default function AnalyticsPage() {
-    const router = useRouter();
-    const [session, setSession] = useState<{ email?: string; permissionName?: string } | null>(null);
+    const { session, loading: sessionLoading, logout } = useSession();
     const [stats, setStats] = useState<{ messagers: Array<{ username: string; count: number }>; voice: Array<{ username: string; minutes: number }> } | null>(null);
 
     useEffect(() => {
-        fetch('/api/auth/session')
-            .then(res => res.json())
-            .then(async (data) => {
-                if (!data.authenticated) {
-                    router.push('/');
-                    return;
-                }
-                setSession(data);
+        if (session) {
+            fetch('/api/bot/activity/top')
+                .then(r => r.ok ? r.json() : null)
+                .then(data => data && setStats(data))
+                .catch(() => { });
+        }
+    }, [session]);
 
-                try {
-                    const res = await fetch('/api/bot/activity/top');
-                    if (res.ok) setStats(await res.json());
-                } catch { }
-            });
-    }, [router]);
-
-    const handleLogout = async () => {
-        await fetch('/api/auth/logout', { method: 'POST' });
-        router.push('/');
-    };
+    if (sessionLoading) return <div className="admin-layout"><div className="admin-main" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Loading...</div></div>;
 
     return (
         <div className="admin-layout">
-            <Sidebar session={session} onLogout={handleLogout} />
+            <Sidebar session={session} onLogout={logout} />
 
             <main className="admin-main">
                 <div style={{ maxWidth: '1200px' }}>
