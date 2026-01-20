@@ -4,25 +4,79 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
+interface Stats {
+    cases: { total: number; warns: number; mutes: number; kicks: number; bans: number; active: number };
+    tickets: { total: number; open: number; closed: number };
+    activity: { messages: number; voiceMinutes: number; uniqueUsers: number };
+    staff: number;
+    members: number;
+}
+
+interface Case {
+    case_id: string;
+    user_tag: string;
+    action_type: string;
+    reason: string;
+    created_at: string;
+    moderator_tag: string;
+}
+
 interface UserSession {
     authenticated: boolean;
     email?: string;
+    discordId?: string;
+    permissionLevel?: number;
+    permissionName?: string;
 }
+
+const API_KEY = 'usgrp-admin-2026-secure-key-x7k9m2p4';
 
 export default function DashboardPage() {
     const router = useRouter();
     const [session, setSession] = useState<UserSession | null>(null);
+    const [stats, setStats] = useState<Stats | null>(null);
+    const [recentCases, setRecentCases] = useState<Case[]>([]);
     const [loading, setLoading] = useState(true);
+    const [apiConnected, setApiConnected] = useState(false);
 
     useEffect(() => {
+        // Check auth
         fetch('/api/auth/session')
             .then(res => res.json())
-            .then(data => {
+            .then(async (data) => {
                 if (!data.authenticated) {
                     router.push('/');
-                } else {
-                    setSession(data);
+                    return;
                 }
+                setSession(data);
+
+                // Fetch stats from bot API
+                try {
+                    const statsRes = await fetch('http://localhost:3003/api/stats', {
+                        headers: { 'X-Admin-Key': API_KEY }
+                    });
+                    if (statsRes.ok) {
+                        const statsData = await statsRes.json();
+                        setStats(statsData);
+                        setApiConnected(true);
+                    }
+                } catch (e) {
+                    console.log('Bot API not available');
+                }
+
+                // Fetch recent cases
+                try {
+                    const casesRes = await fetch('http://localhost:3003/api/cases?limit=5', {
+                        headers: { 'X-Admin-Key': API_KEY }
+                    });
+                    if (casesRes.ok) {
+                        const casesData = await casesRes.json();
+                        setRecentCases(casesData);
+                    }
+                } catch (e) {
+                    console.log('Could not fetch cases');
+                }
+
                 setLoading(false);
             });
     }, [router]);
@@ -34,150 +88,226 @@ export default function DashboardPage() {
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+            <div className="min-h-screen flex items-center justify-center bg-[#0a0a0f]">
                 <div className="text-cyan-400 animate-pulse text-xl">Loading...</div>
             </div>
         );
     }
 
-    const stats = [
-        { label: 'Active Commands', value: '50+', icon: '⚡', gradient: 'from-cyan-500 to-blue-500' },
-        { label: 'Pending Appeals', value: '3', icon: '📝', gradient: 'from-yellow-500 to-orange-500' },
-        { label: 'Recordings', value: '12', icon: '🎙️', gradient: 'from-purple-500 to-pink-500' },
-        { label: 'Backups', value: '7', icon: '💾', gradient: 'from-green-500 to-emerald-500' },
+    const statCards = stats ? [
+        { label: 'Total Cases', value: stats.cases.total.toString(), icon: '📋', color: 'from-blue-500 to-cyan-500' },
+        { label: 'Active Warns', value: stats.cases.warns.toString(), icon: '⚠️', color: 'from-yellow-500 to-orange-500' },
+        { label: 'Messages (30d)', value: stats.activity.messages.toLocaleString(), icon: '💬', color: 'from-purple-500 to-pink-500' },
+        { label: 'Staff Accounts', value: stats.staff.toString(), icon: '👥', color: 'from-green-500 to-emerald-500' },
+        { label: 'Open Tickets', value: stats.tickets.open.toString(), icon: '🎫', color: 'from-red-500 to-pink-500' },
+        { label: 'Server Members', value: stats.members.toLocaleString(), icon: '🏠', color: 'from-indigo-500 to-purple-500' },
+    ] : [
+        { label: 'Total Cases', value: '-', icon: '📋', color: 'from-blue-500 to-cyan-500' },
+        { label: 'Active Warns', value: '-', icon: '⚠️', color: 'from-yellow-500 to-orange-500' },
+        { label: 'Messages', value: '-', icon: '💬', color: 'from-purple-500 to-pink-500' },
+        { label: 'Staff', value: '-', icon: '👥', color: 'from-green-500 to-emerald-500' },
+        { label: 'Tickets', value: '-', icon: '🎫', color: 'from-red-500 to-pink-500' },
+        { label: 'Members', value: '-', icon: '🏠', color: 'from-indigo-500 to-purple-500' },
     ];
 
-    const quickActions = [
-        { label: 'View Commands', href: '/commands', icon: '📋', desc: 'Browse all bot commands' },
-        { label: 'Recordings', href: 'https://recordings.usgrp.xyz', icon: '🎙️', desc: 'Voice recording archive' },
-        { label: 'Manage Appeals', href: '/appeals', icon: '⚖️', desc: 'Review ban appeals' },
-        { label: 'Backups', href: '/backups', icon: '💾', desc: 'Server backup management' },
+    const navItems = [
+        { label: 'Dashboard', href: '/dashboard', icon: '📊', active: true },
+        { label: 'Users', href: '/users', icon: '👤' },
+        { label: 'Cases', href: '/cases', icon: '📋' },
+        { label: 'Tickets', href: '/tickets', icon: '🎫' },
+        { label: 'Analytics', href: '/analytics', icon: '📈' },
+        { label: 'Staff', href: '/staff-dashboard', icon: '👥' },
+        { label: 'Appeals', href: '/appeals', icon: '⚖️' },
+        { label: 'Backups', href: '/backups', icon: '💾' },
     ];
 
-    const services = [
-        { name: 'CO Gov-Utils Bot', status: 'online', url: null },
-        { name: 'CO Economy Bot', status: 'online', url: null },
-        { name: 'Recording Server', status: 'online', url: 'https://recordings.usgrp.xyz' },
-        { name: 'Mail Server', status: 'online', url: 'https://mail.usgrp.xyz' },
-    ];
+    const actionTypeColors: Record<string, string> = {
+        warn: 'bg-yellow-500/20 text-yellow-400',
+        mute: 'bg-orange-500/20 text-orange-400',
+        kick: 'bg-red-500/20 text-red-400',
+        ban: 'bg-red-700/20 text-red-300',
+        note: 'bg-blue-500/20 text-blue-400',
+    };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex">
+        <div className="min-h-screen bg-[#0a0a0f] flex">
             {/* Sidebar */}
-            <aside className="w-64 min-h-screen p-4 flex flex-col bg-slate-950/80 border-r border-white/5">
-                <div className="mb-8">
-                    <div className="flex items-center gap-3 mb-2">
+            <aside className="w-72 bg-[#0d0d14] border-r border-white/5 flex flex-col">
+                {/* Logo */}
+                <div className="p-6 border-b border-white/5">
+                    <div className="flex items-center gap-3">
                         <span className="text-3xl">🛡️</span>
-                        <span className="text-xl font-bold bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">USGRP Admin</span>
+                        <div>
+                            <h1 className="text-xl font-bold text-white">USGRP Admin</h1>
+                            <p className="text-xs text-gray-500">admin.usgrp.xyz</p>
+                        </div>
                     </div>
-                    <p className="text-xs text-slate-500 pl-12">admin.usgrp.xyz</p>
                 </div>
 
-                <nav className="flex-1 space-y-1">
-                    <Link href="/dashboard" className="flex items-center gap-3 px-4 py-3 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
-                        <span>📊</span> Dashboard
-                    </Link>
-                    <Link href="/commands" className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-white/5 hover:text-white transition-all">
-                        <span>📋</span> Commands
-                    </Link>
-                    <Link href="/appeals" className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-white/5 hover:text-white transition-all">
-                        <span>⚖️</span> Appeals
-                    </Link>
-                    <a href="https://recordings.usgrp.xyz" target="_blank" className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-white/5 hover:text-white transition-all">
-                        <span>🎙️</span> Recordings
-                    </a>
-                    <Link href="/backups" className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-white/5 hover:text-white transition-all">
-                        <span>💾</span> Backups
-                    </Link>
+                {/* Navigation */}
+                <nav className="flex-1 p-4 space-y-1">
+                    {navItems.map((item) => (
+                        <Link
+                            key={item.label}
+                            href={item.href}
+                            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${item.active
+                                    ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20'
+                                    : 'text-gray-400 hover:bg-white/5 hover:text-white'
+                                }`}
+                        >
+                            <span className="text-lg">{item.icon}</span>
+                            <span className="font-medium">{item.label}</span>
+                        </Link>
+                    ))}
 
                     <div className="pt-4 mt-4 border-t border-white/5">
-                        <a href="https://mail.usgrp.xyz" target="_blank" className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-white/5 hover:text-white transition-all">
-                            <span>📧</span> Webmail
+                        <a
+                            href="https://mail.usgrp.xyz"
+                            target="_blank"
+                            className="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all"
+                        >
+                            <span className="text-lg">📧</span>
+                            <span className="font-medium">Webmail</span>
                         </a>
                     </div>
                 </nav>
 
-                <div className="pt-4 border-t border-white/5">
-                    <div className="px-4 py-2 text-sm text-slate-500 truncate">
+                {/* User info */}
+                <div className="p-4 border-t border-white/5">
+                    <div className="px-4 py-2 text-sm text-gray-400 truncate mb-2">
                         {session?.email}
+                    </div>
+                    <div className="px-4 py-1 text-xs text-cyan-400 mb-2">
+                        {session?.permissionName || 'MODERATOR'}
                     </div>
                     <button
                         onClick={handleLogout}
-                        className="flex items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-all w-full"
+                        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:bg-red-500/10 transition-all"
                     >
-                        <span>🚪</span> Sign Out
+                        <span>🚪</span>
+                        <span className="font-medium">Sign Out</span>
                     </button>
                 </div>
             </aside>
 
             {/* Main Content */}
             <main className="flex-1 p-8 overflow-auto">
-                <div className="max-w-6xl mx-auto">
+                <div className="max-w-7xl mx-auto">
                     {/* Header */}
-                    <div className="mb-8">
-                        <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">Welcome back</h1>
-                        <p className="text-slate-500">Manage your government utilities from one place</p>
+                    <div className="mb-8 flex items-center justify-between">
+                        <div>
+                            <h1 className="text-3xl font-bold text-white mb-1">Dashboard</h1>
+                            <p className="text-gray-500">Welcome back! Here&apos;s your server overview.</p>
+                        </div>
+                        {!apiConnected && (
+                            <div className="px-4 py-2 bg-yellow-500/10 border border-yellow-500/20 rounded-lg text-yellow-400 text-sm">
+                                ⚠️ Bot API not connected
+                            </div>
+                        )}
                     </div>
 
                     {/* Stats Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                        {stats.map((stat, i) => (
-                            <div key={i} className="relative overflow-hidden rounded-2xl bg-slate-900/50 border border-white/5 p-6 backdrop-blur-xl hover:border-white/10 transition-all group">
-                                <div className={`absolute inset-0 bg-gradient-to-br ${stat.gradient} opacity-5 group-hover:opacity-10 transition-opacity`}></div>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+                        {statCards.map((stat, i) => (
+                            <div
+                                key={i}
+                                className="relative overflow-hidden rounded-2xl bg-[#12121a] border border-white/5 p-5"
+                            >
+                                <div className={`absolute top-0 right-0 w-20 h-20 bg-gradient-to-br ${stat.color} opacity-10 blur-2xl`}></div>
                                 <div className="relative">
-                                    <div className="flex items-center justify-between mb-3">
-                                        <span className="text-3xl">{stat.icon}</span>
-                                        <span className={`text-4xl font-bold bg-gradient-to-r ${stat.gradient} bg-clip-text text-transparent`}>{stat.value}</span>
-                                    </div>
-                                    <p className="text-slate-400 text-sm font-medium">{stat.label}</p>
+                                    <span className="text-2xl">{stat.icon}</span>
+                                    <p className={`text-2xl font-bold mt-2 bg-gradient-to-r ${stat.color} bg-clip-text text-transparent`}>
+                                        {stat.value}
+                                    </p>
+                                    <p className="text-gray-500 text-sm mt-1">{stat.label}</p>
                                 </div>
                             </div>
                         ))}
                     </div>
 
-                    {/* Quick Actions */}
-                    <h2 className="text-xl font-semibold mb-4 text-white">Quick Actions</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                        {quickActions.map((action, i) => (
-                            <Link
-                                key={i}
-                                href={action.href}
-                                target={action.href.startsWith('http') ? '_blank' : undefined}
-                                className="group flex items-center gap-5 p-6 rounded-2xl bg-slate-900/50 border border-white/5 backdrop-blur-xl hover:bg-slate-800/50 hover:border-cyan-500/30 hover:shadow-lg hover:shadow-cyan-500/5 transition-all duration-300"
-                            >
-                                <span className="text-4xl group-hover:scale-110 transition-transform">{action.icon}</span>
-                                <div>
-                                    <h3 className="font-semibold text-lg text-white group-hover:text-cyan-400 transition-colors">{action.label}</h3>
-                                    <p className="text-slate-500 text-sm">{action.desc}</p>
-                                </div>
-                            </Link>
-                        ))}
+                    {/* Two Column Layout */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {/* Recent Cases */}
+                        <div className="bg-[#12121a] border border-white/5 rounded-2xl p-6">
+                            <div className="flex items-center justify-between mb-4">
+                                <h2 className="text-lg font-semibold text-white">Recent Cases</h2>
+                                <Link href="/cases" className="text-cyan-400 text-sm hover:underline">View all →</Link>
+                            </div>
+                            <div className="space-y-3">
+                                {recentCases.length > 0 ? recentCases.map((c) => (
+                                    <div key={c.case_id} className="flex items-center justify-between py-3 px-4 bg-white/5 rounded-xl">
+                                        <div className="flex items-center gap-3">
+                                            <span className={`px-2 py-1 rounded text-xs font-medium ${actionTypeColors[c.action_type] || 'bg-gray-500/20 text-gray-400'}`}>
+                                                {c.action_type.toUpperCase()}
+                                            </span>
+                                            <div>
+                                                <p className="text-white font-medium">{c.user_tag}</p>
+                                                <p className="text-gray-500 text-xs truncate max-w-[150px]">{c.reason}</p>
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-gray-400 text-sm">{c.case_id}</p>
+                                            <p className="text-gray-600 text-xs">{new Date(c.created_at).toLocaleDateString()}</p>
+                                        </div>
+                                    </div>
+                                )) : (
+                                    <p className="text-gray-500 text-center py-8">Connect bot API to see cases</p>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Quick Actions */}
+                        <div className="bg-[#12121a] border border-white/5 rounded-2xl p-6">
+                            <h2 className="text-lg font-semibold text-white mb-4">Quick Actions</h2>
+                            <div className="grid grid-cols-2 gap-3">
+                                <Link href="/users" className="flex items-center gap-3 p-4 bg-white/5 rounded-xl hover:bg-white/10 transition-all">
+                                    <span className="text-2xl">🔍</span>
+                                    <div>
+                                        <p className="font-medium text-white">User Lookup</p>
+                                        <p className="text-gray-500 text-xs">Search & view history</p>
+                                    </div>
+                                </Link>
+                                <Link href="/cases" className="flex items-center gap-3 p-4 bg-white/5 rounded-xl hover:bg-white/10 transition-all">
+                                    <span className="text-2xl">📋</span>
+                                    <div>
+                                        <p className="font-medium text-white">Cases</p>
+                                        <p className="text-gray-500 text-xs">Browse all cases</p>
+                                    </div>
+                                </Link>
+                                <Link href="/analytics" className="flex items-center gap-3 p-4 bg-white/5 rounded-xl hover:bg-white/10 transition-all">
+                                    <span className="text-2xl">📈</span>
+                                    <div>
+                                        <p className="font-medium text-white">Analytics</p>
+                                        <p className="text-gray-500 text-xs">Growth & activity</p>
+                                    </div>
+                                </Link>
+                                <Link href="/appeals" className="flex items-center gap-3 p-4 bg-white/5 rounded-xl hover:bg-white/10 transition-all">
+                                    <span className="text-2xl">⚖️</span>
+                                    <div>
+                                        <p className="font-medium text-white">Appeals</p>
+                                        <p className="text-gray-500 text-xs">Review requests</p>
+                                    </div>
+                                </Link>
+                            </div>
+                        </div>
                     </div>
 
                     {/* Services Status */}
-                    <h2 className="text-xl font-semibold mb-4 text-white">Services Status</h2>
-                    <div className="rounded-2xl bg-slate-900/50 border border-white/5 backdrop-blur-xl p-6">
-                        <div className="space-y-1">
-                            {services.map((service, i) => (
-                                <div key={i} className="flex items-center justify-between py-3 px-4 rounded-xl hover:bg-white/5 transition-colors">
-                                    <div className="flex items-center gap-3">
-                                        <span className={`w-2.5 h-2.5 rounded-full ${service.status === 'online' ? 'bg-green-500 shadow-lg shadow-green-500/50' : 'bg-red-500 shadow-lg shadow-red-500/50'}`}></span>
-                                        <span className="text-slate-300">{service.name}</span>
-                                    </div>
-                                    <div className="flex items-center gap-4">
-                                        <span className={`text-sm font-medium ${service.status === 'online' ? 'text-green-400' : 'text-red-400'}`}>
-                                            {service.status === 'online' ? 'Online' : 'Offline'}
-                                        </span>
-                                        {service.url && (
-                                            <a
-                                                href={service.url}
-                                                target="_blank"
-                                                className="text-cyan-400 text-sm hover:text-cyan-300 font-medium transition-colors"
-                                            >
-                                                Open →
-                                            </a>
-                                        )}
-                                    </div>
+                    <div className="mt-6 bg-[#12121a] border border-white/5 rounded-2xl p-6">
+                        <h2 className="text-lg font-semibold text-white mb-4">Services Status</h2>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            {[
+                                { name: 'CO Gov-Utils Bot', status: apiConnected },
+                                { name: 'Admin API', status: apiConnected },
+                                { name: 'Recording Server', url: 'https://recordings.usgrp.xyz' },
+                                { name: 'Mail Server', url: 'https://mail.usgrp.xyz' },
+                            ].map((service, i) => (
+                                <div key={i} className="flex items-center gap-3 p-4 bg-white/5 rounded-xl">
+                                    <span className={`w-3 h-3 rounded-full ${service.status !== false ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                                    <span className="text-gray-300">{service.name}</span>
+                                    {service.url && (
+                                        <a href={service.url} target="_blank" className="ml-auto text-cyan-400 text-sm">→</a>
+                                    )}
                                 </div>
                             ))}
                         </div>
