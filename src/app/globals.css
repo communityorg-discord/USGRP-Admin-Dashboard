@@ -524,3 +524,255 @@ body {
   color: var(--text-muted);
   font-size: 14px;
 }
+
+/* ========================================
+   Login Page Styles
+   ======================================== */
+
+.login-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-primary);
+  padding: 20px;
+}
+
+.login-loading {
+  color: var(--accent-primary);
+  font-size: 18px;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 400px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 40px 32px;
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.login-logo {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.login-header h1 {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.login-header p {
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.login-error {
+  padding: 12px 16px;
+  background: rgba(244, 67, 54, 0.1);
+  border: 1px solid rgba(244, 67, 54, 0.3);
+  border-radius: 8px;
+  color: #ef5350;
+  font-size: 14px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.form-group input,
+.form-group textarea {
+  padding: 12px 16px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: white;
+  font-size: 14px;
+  transition: border-color 0.15s ease;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+  color: var(--text-muted);
+}
+
+.login-btn {
+  padding: 14px 24px;
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.login-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(33, 150, 243, 0.4);
+}
+
+.login-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.login-footer {
+  margin-top: 24px;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+.login-footer a,
+.login-footer span {
+  color: var(--text-muted);
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.login-footer a:hover {
+  color: var(--accent-primary);
+}
+
+/* ========================================
+   Appeal Page Styles
+   ======================================== */
+
+.appeal-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-primary);
+  padding: 20px;
+}
+
+.appeal-card {
+  width: 100%;
+  max-width: 500px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 40px 32px;
+}
+
+.appeal-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.appeal-logo {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.appeal-header h1 {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.appeal-header p {
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.appeal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.appeal-btn {
+  display: inline-block;
+  padding: 14px 24px;
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  text-align: center;
+  transition: all 0.15s ease;
+}
+
+.appeal-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(33, 150, 243, 0.4);
+}
+
+.appeal-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.appeal-footer {
+  margin-top: 24px;
+  text-align: center;
+}
+
+.appeal-footer a {
+  color: var(--text-muted);
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.appeal-footer a:hover {
+  color: var(--accent-primary);
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status-pending {
+  background: rgba(255, 152, 0, 0.2);
+  color: #ffb74d;
+}
+
+.status-approved {
+  background: rgba(76, 175, 80, 0.2);
+  color: #81c784;
+}
+
+.status-denied {
+  background: rgba(244, 67, 54, 0.2);
+  color: #ef5350;
+}

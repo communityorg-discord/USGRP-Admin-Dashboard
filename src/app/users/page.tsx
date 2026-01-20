@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -31,14 +31,25 @@ interface UserData {
     };
 }
 
-const API_KEY = 'usgrp-admin-2026-secure-key-x7k9m2p4';
-
 export default function UsersPage() {
     const router = useRouter();
+    const [session, setSession] = useState<{ email?: string; permissionName?: string } | null>(null);
     const [searchId, setSearchId] = useState('');
     const [user, setUser] = useState<UserData | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+
+    useEffect(() => {
+        fetch('/api/auth/session')
+            .then(res => res.json())
+            .then(data => {
+                if (!data.authenticated) {
+                    router.push('/');
+                } else {
+                    setSession(data);
+                }
+            });
+    }, [router]);
 
     const handleSearch = async () => {
         if (!searchId.trim()) return;
@@ -48,169 +59,164 @@ export default function UsersPage() {
         setUser(null);
 
         try {
-            const res = await fetch(`http://localhost:3003/api/users/${searchId}`, {
-                headers: { 'X-Admin-Key': API_KEY }
-            });
-
+            const res = await fetch(`/api/bot/users/${searchId}`);
             if (!res.ok) throw new Error('User not found');
-
-            const data = await res.json();
-            setUser(data);
-        } catch (e) {
+            setUser(await res.json());
+        } catch {
             setError('Could not fetch user. Make sure bot API is running.');
         } finally {
             setLoading(false);
         }
     };
 
-    const actionTypeColors: Record<string, string> = {
-        warn: 'bg-yellow-500/20 text-yellow-400',
-        mute: 'bg-orange-500/20 text-orange-400',
-        kick: 'bg-red-500/20 text-red-400',
-        ban: 'bg-red-700/20 text-red-300',
-        note: 'bg-blue-500/20 text-blue-400',
+    const handleLogout = async () => {
+        await fetch('/api/auth/logout', { method: 'POST' });
+        router.push('/');
     };
 
+    const navItems = [
+        { label: 'Dashboard', href: '/dashboard', icon: '📊' },
+        { label: 'User Lookup', href: '/users', icon: '🔍', active: true },
+        { label: 'Cases', href: '/cases', icon: '📋' },
+        { label: 'Tickets', href: '/tickets', icon: '🎫' },
+        { label: 'Analytics', href: '/analytics', icon: '📈' },
+    ];
+
+    const adminItems = [
+        { label: 'Staff', href: '/staff-dashboard', icon: '👥' },
+        { label: 'Appeals', href: '/appeals', icon: '⚖️' },
+        { label: 'Backups', href: '/backups', icon: '💾' },
+    ];
+
     return (
-        <div className="min-h-screen bg-[#0a0a0f] flex">
-            {/* Sidebar */}
-            <aside className="w-72 bg-[#0d0d14] border-r border-white/5 flex flex-col">
-                <div className="p-6 border-b border-white/5">
-                    <div className="flex items-center gap-3">
-                        <span className="text-3xl">🛡️</span>
-                        <div>
-                            <h1 className="text-xl font-bold text-white">USGRP Admin</h1>
-                            <p className="text-xs text-gray-500">admin.usgrp.xyz</p>
+        <div className="admin-layout">
+            <aside className="admin-sidebar">
+                <div className="sidebar-header">
+                    <div className="sidebar-logo">
+                        <div className="sidebar-logo-icon">🛡️</div>
+                        <div className="sidebar-logo-text">
+                            <h1>USGRP Admin</h1>
+                            <span>admin.usgrp.xyz</span>
                         </div>
                     </div>
                 </div>
-                <nav className="flex-1 p-4 space-y-1">
-                    <Link href="/dashboard" className="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all">
-                        <span>📊</span> Dashboard
-                    </Link>
-                    <Link href="/users" className="flex items-center gap-3 px-4 py-3 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
-                        <span>👤</span> Users
-                    </Link>
-                    <Link href="/cases" className="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all">
-                        <span>📋</span> Cases
-                    </Link>
-                    <Link href="/analytics" className="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all">
-                        <span>📈</span> Analytics
-                    </Link>
+                <nav className="sidebar-nav">
+                    <div className="nav-section">
+                        <div className="nav-section-title">Main</div>
+                        {navItems.map((item) => (
+                            <Link key={item.label} href={item.href} className={`nav-item ${item.active ? 'active' : ''}`}>
+                                <span className="nav-item-icon">{item.icon}</span>
+                                {item.label}
+                            </Link>
+                        ))}
+                    </div>
+                    <div className="nav-section">
+                        <div className="nav-section-title">Administration</div>
+                        {adminItems.map((item) => (
+                            <Link key={item.label} href={item.href} className="nav-item">
+                                <span className="nav-item-icon">{item.icon}</span>
+                                {item.label}
+                            </Link>
+                        ))}
+                    </div>
                 </nav>
+                <div className="sidebar-footer">
+                    <div className="user-info">
+                        <div className="user-email">{session?.email}</div>
+                        <div className="user-role">{session?.permissionName || 'MODERATOR'}</div>
+                    </div>
+                    <button onClick={handleLogout} className="logout-btn">🚪 Sign Out</button>
+                </div>
             </aside>
 
-            {/* Main Content */}
-            <main className="flex-1 p-8">
-                <div className="max-w-4xl mx-auto">
-                    <h1 className="text-3xl font-bold text-white mb-2">User Lookup</h1>
-                    <p className="text-gray-500 mb-8">Search by Discord ID to view moderation history</p>
+            <main className="admin-main">
+                <div style={{ maxWidth: '1000px' }}>
+                    <div className="page-header">
+                        <h1 className="page-title">User Lookup</h1>
+                        <p className="page-subtitle">Search by Discord ID to view moderation history</p>
+                    </div>
 
-                    {/* Search */}
-                    <div className="flex gap-4 mb-8">
-                        <input
-                            type="text"
-                            placeholder="Enter Discord User ID..."
-                            value={searchId}
-                            onChange={(e) => setSearchId(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                            className="flex-1 px-4 py-3 bg-[#12121a] border border-white/10 rounded-xl text-white focus:outline-none focus:border-cyan-500/50"
-                        />
-                        <button
-                            onClick={handleSearch}
-                            disabled={loading}
-                            className="px-6 py-3 bg-cyan-500 text-white rounded-xl font-medium hover:bg-cyan-600 disabled:opacity-50 transition-all"
-                        >
-                            {loading ? 'Searching...' : 'Search'}
-                        </button>
+                    <div className="card" style={{ marginBottom: '24px' }}>
+                        <div style={{ display: 'flex', gap: '12px' }}>
+                            <input
+                                type="text"
+                                className="search-input"
+                                placeholder="Enter Discord User ID..."
+                                value={searchId}
+                                onChange={(e) => setSearchId(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                                style={{ flex: 1, padding: '12px 16px', background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'white', fontSize: '14px' }}
+                            />
+                            <button
+                                onClick={handleSearch}
+                                disabled={loading}
+                                style={{ padding: '12px 24px', background: 'var(--accent-primary)', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}
+                            >
+                                {loading ? 'Searching...' : 'Search'}
+                            </button>
+                        </div>
                     </div>
 
                     {error && (
-                        <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 mb-8">
+                        <div className="alert-warning" style={{ marginBottom: '24px' }}>
                             {error}
                         </div>
                     )}
 
-                    {/* User Results */}
                     {user && (
-                        <div className="space-y-6">
-                            {/* User Card */}
-                            <div className="bg-[#12121a] border border-white/5 rounded-2xl p-6">
-                                <div className="flex items-start gap-6">
+                        <>
+                            <div className="card" style={{ marginBottom: '24px' }}>
+                                <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
                                     {user.user.avatar ? (
-                                        <img src={user.user.avatar} alt="" className="w-20 h-20 rounded-full" />
+                                        <img src={user.user.avatar} alt="" style={{ width: '80px', height: '80px', borderRadius: '50%' }} />
                                     ) : (
-                                        <div className="w-20 h-20 rounded-full bg-gray-700 flex items-center justify-center text-2xl">👤</div>
+                                        <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'var(--bg-tertiary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px' }}>👤</div>
                                     )}
-                                    <div className="flex-1">
-                                        <h2 className="text-2xl font-bold text-white">
-                                            {user.user.displayName || user.user.username || 'Unknown User'}
-                                        </h2>
-                                        <p className="text-gray-500">@{user.user.username}</p>
-                                        <p className="text-gray-600 text-sm mt-1">ID: {user.user.id}</p>
-
-                                        {user.user.roles && user.user.roles.length > 0 && (
-                                            <div className="flex flex-wrap gap-2 mt-3">
-                                                {user.user.roles.slice(0, 5).map((role) => (
-                                                    <span key={role.id} className="px-2 py-1 text-xs rounded" style={{ backgroundColor: role.color + '20', color: role.color }}>
-                                                        {role.name}
-                                                    </span>
-                                                ))}
-                                                {user.user.roles.length > 5 && (
-                                                    <span className="px-2 py-1 text-xs rounded bg-gray-700 text-gray-400">
-                                                        +{user.user.roles.length - 5} more
-                                                    </span>
-                                                )}
-                                            </div>
-                                        )}
+                                    <div style={{ flex: 1 }}>
+                                        <h2 style={{ fontSize: '24px', fontWeight: 700, marginBottom: '4px' }}>{user.user.displayName || user.user.username || 'Unknown User'}</h2>
+                                        <p style={{ color: 'var(--text-muted)', marginBottom: '4px' }}>@{user.user.username}</p>
+                                        <p style={{ color: 'var(--text-muted)', fontSize: '12px' }}>ID: {user.user.id}</p>
                                     </div>
-
-                                    {/* Stats */}
-                                    <div className="grid grid-cols-3 gap-4">
-                                        <div className="text-center p-3 bg-white/5 rounded-xl">
-                                            <p className="text-2xl font-bold text-cyan-400">{user.caseCount}</p>
-                                            <p className="text-gray-500 text-xs">Cases</p>
+                                    <div style={{ display: 'flex', gap: '12px' }}>
+                                        <div style={{ textAlign: 'center', padding: '12px 20px', background: 'var(--bg-tertiary)', borderRadius: '8px' }}>
+                                            <div style={{ fontSize: '24px', fontWeight: 700, color: 'var(--accent-primary)' }}>{user.caseCount}</div>
+                                            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Cases</div>
                                         </div>
-                                        <div className="text-center p-3 bg-white/5 rounded-xl">
-                                            <p className="text-2xl font-bold text-purple-400">{user.activity.totalMessages}</p>
-                                            <p className="text-gray-500 text-xs">Messages</p>
+                                        <div style={{ textAlign: 'center', padding: '12px 20px', background: 'var(--bg-tertiary)', borderRadius: '8px' }}>
+                                            <div style={{ fontSize: '24px', fontWeight: 700, color: '#9c27b0' }}>{user.activity.totalMessages}</div>
+                                            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Messages</div>
                                         </div>
-                                        <div className="text-center p-3 bg-white/5 rounded-xl">
-                                            <p className="text-2xl font-bold text-green-400">{Math.round(user.activity.totalVoice / 60)}h</p>
-                                            <p className="text-gray-500 text-xs">Voice</p>
+                                        <div style={{ textAlign: 'center', padding: '12px 20px', background: 'var(--bg-tertiary)', borderRadius: '8px' }}>
+                                            <div style={{ fontSize: '24px', fontWeight: 700, color: '#4caf50' }}>{Math.round(user.activity.totalVoice / 60)}h</div>
+                                            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Voice</div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Cases */}
-                            <div className="bg-[#12121a] border border-white/5 rounded-2xl p-6">
-                                <h3 className="text-lg font-semibold text-white mb-4">Moderation History</h3>
-                                {user.cases.length > 0 ? (
-                                    <div className="space-y-3">
-                                        {user.cases.map((c) => (
-                                            <div key={c.case_id} className="flex items-center justify-between py-3 px-4 bg-white/5 rounded-xl">
-                                                <div className="flex items-center gap-3">
-                                                    <span className={`px-2 py-1 rounded text-xs font-medium ${actionTypeColors[c.action_type] || 'bg-gray-500/20'}`}>
-                                                        {c.action_type.toUpperCase()}
-                                                    </span>
-                                                    <div>
-                                                        <p className="text-white">{c.reason || 'No reason'}</p>
-                                                        <p className="text-gray-500 text-xs">By {c.moderator_tag}</p>
-                                                    </div>
-                                                </div>
-                                                <div className="text-right">
-                                                    <p className="text-gray-400 text-sm">{c.case_id}</p>
-                                                    <p className="text-gray-600 text-xs">{new Date(c.created_at).toLocaleDateString()}</p>
-                                                </div>
+                            <div className="card">
+                                <div className="card-header">
+                                    <h3 className="card-title">Moderation History</h3>
+                                </div>
+                                {user.cases.length > 0 ? user.cases.map((c) => (
+                                    <div key={c.case_id} className="case-item">
+                                        <div className="case-left">
+                                            <span className={`case-badge badge-${c.action_type}`}>{c.action_type.toUpperCase()}</span>
+                                            <div className="case-info">
+                                                <h4>{c.reason || 'No reason provided'}</h4>
+                                                <p>By {c.moderator_tag}</p>
                                             </div>
-                                        ))}
+                                        </div>
+                                        <div className="case-right">
+                                            <div className="case-id">{c.case_id}</div>
+                                            <div className="case-date">{new Date(c.created_at).toLocaleDateString()}</div>
+                                        </div>
                                     </div>
-                                ) : (
-                                    <p className="text-gray-500 text-center py-8">No moderation history</p>
+                                )) : (
+                                    <div className="empty-state">No moderation history</div>
                                 )}
                             </div>
-                        </div>
+                        </>
                     )}
                 </div>
             </main>
