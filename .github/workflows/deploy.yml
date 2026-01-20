@@ -1,0 +1,24 @@
+name: Deploy to Bots VPS
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.BOTS_HOST }}
+          username: ${{ secrets.BOTS_USER }}
+          key: ${{ secrets.BOTS_SSH_KEY }}
+          script: |
+            cd ~/usgrp-admin
+            git pull origin main
+            npm install
+            npm run build
+            pm2 restart usgrp-admin || pm2 start npm --name "usgrp-admin" -- start
+            echo "Deployed at $(date)"
