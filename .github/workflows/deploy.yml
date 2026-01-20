@@ -18,8 +18,9 @@ jobs:
           script: |
             set -e
             cd ~/usgrp-admin
-            echo "=== Git Pull ==="
-            git pull origin main
+            echo "=== Resetting local changes ==="
+            git fetch origin main
+            git reset --hard origin/main
             echo "=== NPM Install ==="
             npm install
             echo "=== Clearing .next cache ==="
