@@ -19,6 +19,7 @@ jobs:
             cd ~/usgrp-admin
             git pull origin main
             npm install
+            rm -rf .next
             npm run build
             pm2 restart usgrp-admin || pm2 start npm --name "usgrp-admin" -- start
             echo "Deployed at $(date)"
