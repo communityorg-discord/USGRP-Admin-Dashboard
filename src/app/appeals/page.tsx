@@ -13,7 +13,7 @@ export default function AppealsPage() {
             <Sidebar session={session} onLogout={logout} />
 
             <main className="admin-main">
-                <div style={{ maxWidth: '1000px' }}>
+                <div style={{ maxWidth: '1000px', width: '100%' }}>
                     <div className="page-header">
                         <h1 className="page-title">Appeals</h1>
                         <p className="page-subtitle">Review and manage ban/mute appeals</p>

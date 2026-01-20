@@ -737,6 +737,11 @@ textarea.form-input {
   color: var(--text-muted);
 }
 
+/* Page Content Container */
+.page-content {
+  width: 100%;
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;

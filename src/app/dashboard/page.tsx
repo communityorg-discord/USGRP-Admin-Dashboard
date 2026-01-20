@@ -77,7 +77,7 @@ export default function DashboardPage() {
             <Sidebar session={session} onLogout={logout} />
 
             <main className="admin-main">
-                <div style={{ maxWidth: '1400px' }}>
+                <div style={{ maxWidth: '1400px', width: '100%' }}>
                     {/* Welcome Header */}
                     <div className="welcome-header">
                         <div className="welcome-text">

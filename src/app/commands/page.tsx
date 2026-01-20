@@ -30,7 +30,7 @@ export default function CommandsPage() {
             <Sidebar session={session} onLogout={logout} />
 
             <main className="admin-main">
-                <div style={{ maxWidth: '1000px' }}>
+                <div style={{ maxWidth: '1000px', width: '100%' }}>
                     <div className="page-header">
                         <h1 className="page-title">Commands Reference</h1>
                         <p className="page-subtitle">Quick reference for bot commands</p>

@@ -42,7 +42,7 @@ export default function CasesPage() {
             <Sidebar session={session} onLogout={logout} />
 
             <main className="admin-main">
-                <div style={{ maxWidth: '1200px' }}>
+                <div style={{ maxWidth: '1200px', width: '100%' }}>
                     <div className="page-header">
                         <h1 className="page-title">Cases</h1>
                         <p className="page-subtitle">View and manage moderation cases</p>
