@@ -1,10 +1,25 @@
 import { SessionOptions } from 'iron-session';
 
-export interface SessionData {
+export interface AuthUser {
+    userId: string;
     email: string;
-    password: string;
+    discordId: string | null;
+    displayName: string;
+    authorityLevel: number;
+    roles: string[];
+    permissions: string[];
+    sessionId: string;
+}
+
+export interface SessionData {
+    authToken?: string;
+    user?: AuthUser;
     isLoggedIn: boolean;
     lastActivity?: number;
+
+    // Legacy fields - kept for migration
+    email?: string;
+    password?: string;
     isAdmin?: boolean;
 }
 
@@ -20,7 +35,5 @@ export const sessionOptions: SessionOptions = {
 };
 
 export const defaultSession: SessionData = {
-    email: '',
-    password: '',
     isLoggedIn: false,
 };

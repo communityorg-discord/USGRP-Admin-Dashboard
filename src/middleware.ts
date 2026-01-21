@@ -31,6 +31,11 @@ export function middleware(request: NextRequest) {
         }
     }
 
+    // Auth callback should always be accessible
+    if (pathname.startsWith('/api/auth/')) {
+        return NextResponse.next();
+    }
+
     return NextResponse.next();
 }
 

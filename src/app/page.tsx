@@ -1,38 +1,46 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { getAuthRedirectUrl } from '@/lib/authClient';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [checking, setChecking] = useState(true);
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-
-    try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (res.ok) {
-        router.push('/dashboard');
-      } else {
+  useEffect(() => {
+    // Check if already logged in
+    async function checkSession() {
+      try {
+        const res = await fetch('/api/auth/session');
         const data = await res.json();
-        setError(data.error || 'Login failed');
+
+        if (data.authenticated) {
+          router.push('/dashboard');
+          return;
+        }
+      } catch (e) {
+        console.error('Session check failed:', e);
+      } finally {
+        setChecking(false);
       }
-    } catch {
-      setError('Connection error');
-    } finally {
-      setLoading(false);
     }
+
+    // Check URL params for error
+    const params = new URLSearchParams(window.location.search);
+    const errorParam = params.get('error');
+    if (errorParam) {
+      setError(errorParam);
+    }
+
+    checkSession();
+  }, [router]);
+
+  const handleLogin = () => {
+    // Use hardcoded URL to avoid localhost issues behind nginx
+    const returnUrl = 'https://admin.usgrp.xyz';
+    window.location.href = getAuthRedirectUrl(returnUrl);
   };
 
   return (
@@ -85,40 +93,10 @@ export default function LoginPage() {
               <span>AUTHORIZED ACCESS ONLY</span>
             </div>
             <h2>Staff Authentication</h2>
-            <p>Enter your credentials to access the administrative dashboard</p>
+            <p>Sign in via USGRP Auth to access the administrative dashboard</p>
           </div>
 
-          <form className="login-form-gov" onSubmit={handleLogin}>
-            <div className="form-group">
-              <label className="form-label-gov">
-                <span className="label-icon">📧</span>
-                Email Address
-              </label>
-              <input
-                type="email"
-                className="form-input-gov"
-                placeholder="username@usgrp.xyz"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label-gov">
-                <span className="label-icon">🔐</span>
-                Password
-              </label>
-              <input
-                type="password"
-                className="form-input-gov"
-                placeholder="••••••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
-
+          <div className="login-form-gov" style={{ textAlign: 'center' }}>
             {error && (
               <div className="login-error">
                 <span className="error-icon">⚠️</span>
@@ -126,20 +104,22 @@ export default function LoginPage() {
               </div>
             )}
 
-            <button type="submit" className="btn-login-gov" disabled={loading}>
-              {loading ? (
-                <>
-                  <span className="loading-spinner"></span>
-                  Authenticating...
-                </>
-              ) : (
-                <>
-                  <span>🔓</span>
-                  Access Dashboard
-                </>
-              )}
-            </button>
-          </form>
+            {checking ? (
+              <div style={{ padding: '2rem' }}>
+                <span className="loading-spinner"></span>
+                <p style={{ marginTop: '1rem', color: '#6b7280' }}>Checking session...</p>
+              </div>
+            ) : (
+              <button onClick={handleLogin} className="btn-login-gov" style={{ width: '100%', marginTop: '1rem' }}>
+                <span>🔐</span>
+                Sign in with USGRP Auth
+              </button>
+            )}
+
+            <p style={{ marginTop: '1rem', fontSize: '0.875rem', color: '#6b7280' }}>
+              You'll be redirected to auth.usgrp.xyz to sign in securely.
+            </p>
+          </div>
 
           <div className="login-footer">
             <div className="security-notice">
