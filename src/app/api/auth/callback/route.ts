@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
             validateRes = await fetch(`${AUTH_URL}/api/auth/validate`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ token }),
+                body: JSON.stringify({ token, service: 'Admin Dashboard' }),
             });
         } catch (fetchError) {
             console.error('Fetch to Auth failed:', fetchError);
