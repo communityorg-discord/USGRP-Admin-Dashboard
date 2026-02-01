@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 
 export interface UserSession {
     authenticated: boolean;
+    userId?: string;
     email?: string;
     discordId?: string;
     permissionLevel?: number;
@@ -42,11 +43,12 @@ export function useSession() {
 
                 setSession({
                     authenticated: true,
-                    email: authData.email,
+                    userId: authData.user?.userId,
+                    email: authData.user?.email || authData.email,
                     discordId: permData?.discordId,
                     permissionLevel: permData?.permissionLevel || 1,
                     permissionName: permData?.permissionName || 'MODERATOR',
-                    displayName: permData?.displayName,
+                    displayName: permData?.displayName || authData.user?.displayName,
                 });
             } catch {
                 router.push('/');

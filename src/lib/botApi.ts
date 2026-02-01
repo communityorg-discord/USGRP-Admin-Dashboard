@@ -5,7 +5,7 @@
 
 // API Configuration - hardcoded as requested
 const API_CONFIG = {
-    baseUrl: 'http://localhost:3003',
+    baseUrl: 'http://localhost:3320',
     apiKey: 'usgrp-admin-2026-secure-key-x7k9m2p4'
 };
 

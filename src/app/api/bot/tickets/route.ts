@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-const BOT_API_URL = 'http://localhost:3003';
+const BOT_API_URL = 'http://localhost:3320';
 const BOT_API_KEY = 'usgrp-admin-2026-secure-key-x7k9m2p4';
 
 export async function GET() {

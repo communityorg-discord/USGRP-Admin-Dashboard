@@ -44,7 +44,15 @@ export default function MailPage() {
         }
     };
 
-    if (sessionLoading) return <div className="admin-layout"><div className="admin-main" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Loading...</div></div>;
+    if (sessionLoading) {
+        return (
+            <div className="admin-layout">
+                <div className="admin-main" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <span style={{ color: 'var(--text-muted)' }}>Loading...</span>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="admin-layout">
@@ -52,30 +60,22 @@ export default function MailPage() {
 
             <main className="admin-main">
                 <div>
+                    {/* Header */}
                     <div className="page-header">
                         <h1 className="page-title">Mail Composer</h1>
-                        <p className="page-subtitle">Send emails from your USGRP account</p>
+                        <p className="page-subtitle">Send emails from your @usgrp.xyz address</p>
                     </div>
 
-                    <div className="card">
-                        <div className="card-header">
-                            <h3 className="card-title">✉️ New Email</h3>
+                    {/* Compose Card */}
+                    <div className="compose-card">
+                        <div className="compose-header">
+                            <h3>New Message</h3>
+                            <span className="from-address">From: {session?.email || 'your-email@usgrp.xyz'}</span>
                         </div>
 
-                        <div style={{ padding: '20px' }}>
-                            <div style={{ marginBottom: '16px' }}>
-                                <label className="form-label">From</label>
-                                <input
-                                    type="text"
-                                    className="form-input"
-                                    value={session?.email || ''}
-                                    disabled
-                                    style={{ background: 'var(--bg-primary)', opacity: 0.7 }}
-                                />
-                            </div>
-
-                            <div style={{ marginBottom: '16px' }}>
-                                <label className="form-label">To</label>
+                        <div className="compose-body">
+                            <div className="form-row">
+                                <label>To</label>
                                 <input
                                     type="email"
                                     className="form-input"
@@ -85,47 +85,141 @@ export default function MailPage() {
                                 />
                             </div>
 
-                            <div style={{ marginBottom: '16px' }}>
-                                <label className="form-label">Subject</label>
+                            <div className="form-row">
+                                <label>Subject</label>
                                 <input
                                     type="text"
                                     className="form-input"
-                                    placeholder="Email subject"
+                                    placeholder="Enter subject..."
                                     value={subject}
                                     onChange={e => setSubject(e.target.value)}
                                 />
                             </div>
 
-                            <div style={{ marginBottom: '20px' }}>
-                                <label className="form-label">Message</label>
+                            <div className="form-row">
+                                <label>Message</label>
                                 <textarea
                                     className="form-input"
                                     placeholder="Write your message..."
-                                    rows={8}
+                                    rows={12}
                                     value={body}
                                     onChange={e => setBody(e.target.value)}
-                                    style={{ resize: 'vertical' }}
                                 />
                             </div>
 
                             {status && (
-                                <div className={status.type === 'success' ? 'alert-success' : 'alert-warning'} style={{ marginBottom: '16px' }}>
-                                    {status.message}
+                                <div className={`status-message ${status.type}`}>
+                                    {status.type === 'success' ? '✓' : '✕'} {status.message}
                                 </div>
                             )}
 
-                            <div style={{ display: 'flex', gap: '12px' }}>
-                                <button className="btn btn-primary" onClick={handleSend} disabled={sending}>
-                                    {sending ? 'Sending...' : '📤 Send Email'}
-                                </button>
-                                <button className="btn btn-secondary" onClick={() => { setTo(''); setSubject(''); setBody(''); setStatus(null); }}>
-                                    Clear
+                            <div className="compose-actions">
+                                <button
+                                    className="btn btn-primary"
+                                    onClick={handleSend}
+                                    disabled={sending}
+                                >
+                                    {sending ? 'Sending...' : 'Send Email'}
                                 </button>
                             </div>
                         </div>
                     </div>
                 </div>
             </main>
+
+            <style jsx>{`
+                .page-header {
+                    margin-bottom: 24px;
+                }
+
+                .page-title {
+                    font-size: 28px;
+                    font-weight: 700;
+                    color: var(--text-primary);
+                    margin-bottom: 4px;
+                }
+
+                .page-subtitle {
+                    font-size: 15px;
+                    color: var(--text-muted);
+                }
+
+                .compose-card {
+                    background: var(--bg-elevated);
+                    border: 1px solid var(--border-subtle);
+                    border-radius: 12px;
+                    overflow: hidden;
+                    max-width: 700px;
+                }
+
+                .compose-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    padding: 20px 24px;
+                    border-bottom: 1px solid var(--border-subtle);
+                }
+
+                .compose-header h3 {
+                    font-size: 16px;
+                    font-weight: 600;
+                    color: var(--text-primary);
+                }
+
+                .from-address {
+                    font-size: 13px;
+                    color: var(--text-muted);
+                }
+
+                .compose-body {
+                    padding: 24px;
+                }
+
+                .form-row {
+                    margin-bottom: 20px;
+                }
+
+                .form-row label {
+                    display: block;
+                    font-size: 12px;
+                    font-weight: 600;
+                    color: var(--text-muted);
+                    text-transform: uppercase;
+                    letter-spacing: 0.05em;
+                    margin-bottom: 8px;
+                }
+
+                .form-row textarea {
+                    resize: vertical;
+                    min-height: 200px;
+                    font-family: inherit;
+                    line-height: 1.6;
+                }
+
+                .status-message {
+                    padding: 12px 16px;
+                    border-radius: 8px;
+                    font-size: 14px;
+                    margin-bottom: 20px;
+                }
+
+                .status-message.success {
+                    background: rgba(16, 185, 129, 0.1);
+                    border: 1px solid rgba(16, 185, 129, 0.2);
+                    color: #34d399;
+                }
+
+                .status-message.error {
+                    background: rgba(239, 68, 68, 0.1);
+                    border: 1px solid rgba(239, 68, 68, 0.2);
+                    color: #f87171;
+                }
+
+                .compose-actions {
+                    display: flex;
+                    justify-content: flex-end;
+                }
+            `}</style>
         </div>
     );
 }

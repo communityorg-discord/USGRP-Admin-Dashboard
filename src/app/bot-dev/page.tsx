@@ -24,7 +24,7 @@ interface GitHubWorkflow {
 export default function BotDevPage() {
     const { session, loading: sessionLoading, logout } = useSession();
     const [apis, setApis] = useState<APIStatus[]>([
-        { name: 'Admin API', url: 'http://localhost:3003/api/stats', status: 'checking' },
+        { name: 'Admin API', url: 'http://localhost:3320/api/stats', status: 'checking' },
         { name: 'Economy Bot API', url: 'http://localhost:3004/health', status: 'checking' },
         { name: 'Gov Utils Bot', url: 'http://localhost:3005/health', status: 'checking' },
     ]);

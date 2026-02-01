@@ -1,0 +1,75 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { getIronSession } from 'iron-session';
+import { cookies } from 'next/headers';
+import { sessionOptions, SessionData } from '@/lib/session';
+
+const CITIZEN_API_URL = 'http://localhost:3320';
+const API_KEY = 'usgrp-admin-2026-secure-key-x7k9m2p4';
+
+export async function POST(
+    req: NextRequest,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+        const user = session.user;
+
+        if (!user || !user.userId) {
+            return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 });
+        }
+
+        const id = (await params).id;
+        const body = await req.json();
+
+        const res = await fetch(`${CITIZEN_API_URL}/api/folders/${id}/share`, {
+            method: 'POST',
+            headers: { 
+                'x-api-key': API_KEY,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                userId: user.userId,
+                email: body.email
+            })
+        });
+
+        const data = await res.json();
+        return NextResponse.json(data, { status: res.status });
+    } catch (error) {
+        console.error('Error sharing folder:', error);
+        return NextResponse.json({ ok: false, error: 'Internal Server Error' }, { status: 500 });
+    }
+}
+
+export async function DELETE(
+    req: NextRequest,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+        const user = session.user;
+
+        if (!user || !user.userId) {
+            return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 });
+        }
+
+        const id = (await params).id;
+        const { searchParams } = new URL(req.url);
+        const email = searchParams.get('email');
+
+        if (!email) {
+            return NextResponse.json({ ok: false, error: 'Email required' }, { status: 400 });
+        }
+
+        const res = await fetch(`${CITIZEN_API_URL}/api/folders/${id}/share?userId=${user.userId}&email=${encodeURIComponent(email)}`, {
+            method: 'DELETE',
+            headers: { 'x-api-key': API_KEY }
+        });
+
+        const data = await res.json();
+        return NextResponse.json(data, { status: res.status });
+    } catch (error) {
+        console.error('Error removing share:', error);
+        return NextResponse.json({ ok: false, error: 'Internal Server Error' }, { status: 500 });
+    }
+}

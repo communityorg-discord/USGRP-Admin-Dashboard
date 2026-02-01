@@ -44,96 +44,224 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="login-page">
-      {/* Background Pattern */}
-      <div className="login-bg-pattern"></div>
-
-      {/* Government Seal Watermark */}
-      <div className="login-watermark">
-        <svg viewBox="0 0 100 100" className="seal-svg">
-          <circle cx="50" cy="50" r="48" fill="none" stroke="currentColor" strokeWidth="1" />
-          <circle cx="50" cy="50" r="42" fill="none" stroke="currentColor" strokeWidth="0.5" />
-          <circle cx="50" cy="50" r="35" fill="none" stroke="currentColor" strokeWidth="0.5" />
-          {/* Stars around the edge */}
-          {[...Array(13)].map((_, i) => {
-            const angle = (i * 360 / 13) * (Math.PI / 180);
-            const x = 50 + 45 * Math.cos(angle);
-            const y = 50 + 45 * Math.sin(angle);
-            return <text key={i} x={x} y={y} fontSize="4" textAnchor="middle" dominantBaseline="middle" fill="currentColor">★</text>;
-          })}
-          {/* Center eagle silhouette (simplified) */}
-          <text x="50" y="50" fontSize="24" textAnchor="middle" dominantBaseline="middle" fill="currentColor">🦅</text>
-        </svg>
-      </div>
-
-      <div className="login-container-gov">
-        {/* Header Banner */}
-        <div className="login-banner">
-          <div className="banner-stripes">
-            <div className="stripe red"></div>
-            <div className="stripe white"></div>
-            <div className="stripe blue"></div>
+    <div className="login-container">
+      <div className="login-card">
+        {/* Header */}
+        <div className="login-header">
+          <div className="logo-icon">
+            <span>U</span>
           </div>
-          <div className="banner-content">
-            <div className="gov-shield">
-              <span className="shield-icon">🏛️</span>
-            </div>
-            <div className="gov-title">
-              <span className="gov-label">UNITED STATES</span>
-              <h1>Government Roleplay</h1>
-              <span className="gov-sublabel">Administrative Portal</span>
-            </div>
+          <div className="logo-text">
+            <h1>USGRP Admin</h1>
+            <p>Secure System Access</p>
           </div>
         </div>
 
-        {/* Login Card */}
-        <div className="login-card-gov">
-          <div className="login-card-header">
-            <div className="classification-banner">
-              <span>AUTHORIZED ACCESS ONLY</span>
-            </div>
-            <h2>Staff Authentication</h2>
-            <p>Sign in via USGRP Auth to access the administrative dashboard</p>
+        {/* Status Messages */}
+        {error && (
+          <div className="error-alert">
+            <span className="error-icon">⚠️</span>
+            {error}
           </div>
+        )}
 
-          <div className="login-form-gov" style={{ textAlign: 'center' }}>
-            {error && (
-              <div className="login-error">
-                <span className="error-icon">⚠️</span>
-                {error}
+        {/* Content */}
+        <div className="login-content">
+          {checking ? (
+            <div className="loading-state">
+              <div className="spinner"></div>
+              <p>Verifying secure session...</p>
+            </div>
+          ) : (
+            <>
+              <div className="classification-banner">
+                <span className="lock-icon">🔒</span>
+                RESTRICTED ACCESS
               </div>
-            )}
+              
+              <p className="login-desc">
+                This system is restricted to authorized USGRP staff only. 
+                All actions are monitored and logged.
+              </p>
 
-            {checking ? (
-              <div style={{ padding: '2rem' }}>
-                <span className="loading-spinner"></span>
-                <p style={{ marginTop: '1rem', color: '#6b7280' }}>Checking session...</p>
-              </div>
-            ) : (
-              <button onClick={handleLogin} className="btn-login-gov" style={{ width: '100%', marginTop: '1rem' }}>
-                <span>🔐</span>
-                Sign in with USGRP Auth
+              <button onClick={handleLogin} className="login-btn">
+                <span className="btn-icon">🔐</span>
+                Authenticate with USGRP ID
               </button>
-            )}
 
-            <p style={{ marginTop: '1rem', fontSize: '0.875rem', color: '#6b7280' }}>
-              You'll be redirected to auth.usgrp.xyz to sign in securely.
-            </p>
-          </div>
-
-          <div className="login-footer">
-            <div className="security-notice">
-              <span className="notice-icon">🔒</span>
-              <span>This system is for authorized personnel only. All access attempts are logged and monitored.</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Bottom Info */}
-        <div className="login-info">
-          <p>© 2026 USGRP Administration • Secure Government Portal</p>
+              <div className="login-footer">
+                <p>Protected by USGRP Auth • 2026</p>
+              </div>
+            </>
+          )}
         </div>
       </div>
+
+      <style jsx>{`
+        .login-container {
+          min-height: 100vh;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 20px;
+          position: relative;
+        }
+
+        .login-card {
+          width: 100%;
+          max-width: 420px;
+          background: rgba(15, 23, 42, 0.65);
+          backdrop-filter: blur(24px);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 24px;
+          padding: 40px;
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+          animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes slideUp {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        .login-header {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          margin-bottom: 32px;
+        }
+
+        .logo-icon {
+          width: 48px;
+          height: 48px;
+          background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+          border-radius: 12px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 800;
+          font-size: 24px;
+          color: white;
+          box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
+        }
+
+        .logo-text h1 {
+          font-size: 20px;
+          font-weight: 700;
+          background: linear-gradient(to right, #fff, #94a3b8);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          margin: 0;
+          line-height: 1.2;
+        }
+
+        .logo-text p {
+          font-size: 13px;
+          color: #64748b;
+          font-weight: 500;
+          margin: 0;
+        }
+
+        .loading-state {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 16px;
+          padding: 40px 0;
+        }
+
+        .spinner {
+          width: 40px;
+          height: 40px;
+          border: 3px solid rgba(59, 130, 246, 0.1);
+          border-top-color: #3b82f6;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .loading-state p {
+          color: #94a3b8;
+          font-size: 14px;
+        }
+
+        .classification-banner {
+          background: rgba(239, 68, 68, 0.1);
+          border: 1px solid rgba(239, 68, 68, 0.2);
+          color: #fca5a5;
+          font-size: 11px;
+          font-weight: 700;
+          letter-spacing: 0.1em;
+          padding: 8px 12px;
+          border-radius: 8px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          margin-bottom: 24px;
+        }
+
+        .lock-icon { font-size: 12px; }
+
+        .login-desc {
+          font-size: 14px;
+          color: #94a3b8;
+          line-height: 1.6;
+          margin-bottom: 32px;
+          text-align: left;
+        }
+
+        .login-btn {
+          width: 100%;
+          background: linear-gradient(135deg, #3b82f6, #2563eb);
+          color: white;
+          border: none;
+          padding: 16px;
+          border-radius: 12px;
+          font-weight: 600;
+          font-size: 15px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 12px;
+          transition: all 0.2s;
+          box-shadow: 0 4px 20px rgba(59, 130, 246, 0.3);
+        }
+
+        .login-btn:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+        }
+
+        .login-btn:active { transform: translateY(0); }
+
+        .error-alert {
+          background: rgba(239, 68, 68, 0.1);
+          border: 1px solid rgba(239, 68, 68, 0.2);
+          color: #fca5a5;
+          padding: 12px;
+          border-radius: 8px;
+          font-size: 13px;
+          margin-bottom: 24px;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .login-footer {
+          margin-top: 32px;
+          text-align: center;
+          border-top: 1px solid rgba(255, 255, 255, 0.05);
+          padding-top: 20px;
+        }
+
+        .login-footer p {
+          font-size: 12px;
+          color: #475569;
+        }
+      `}</style>
     </div>
   );
 }
