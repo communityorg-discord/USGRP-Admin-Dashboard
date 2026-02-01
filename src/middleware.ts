@@ -7,40 +7,36 @@ export function middleware(request: NextRequest) {
 
     // If accessing from appeals.usgrp.xyz subdomain
     if (host.startsWith('appeals.')) {
-        // Only allow appeal-related routes
-        if (pathname === '/' || pathname.startsWith('/appeal')) {
-            // Redirect root to /appeal
-            if (pathname === '/') {
-                return NextResponse.redirect(new URL('/appeal', request.url));
-            }
+        // Redirect root to /appeal
+        if (pathname === '/') {
+            return NextResponse.redirect(new URL('/appeal', request.url));
+        }
+        
+        // Allow appeal-related routes and API
+        if (pathname.startsWith('/appeal') || pathname.startsWith('/api/appeals')) {
             return NextResponse.next();
         }
 
-        // Block admin routes from appeals subdomain
-        if (pathname.startsWith('/dashboard') || pathname.startsWith('/appeals') ||
-            pathname.startsWith('/commands') || pathname.startsWith('/backups')) {
-            return NextResponse.redirect(new URL('/appeal', request.url));
+        // Allow Next.js assets
+        if (pathname.startsWith('/_next') || pathname === '/favicon.ico') {
+            return NextResponse.next();
         }
+
+        // Block all other routes - redirect to appeal
+        return NextResponse.redirect(new URL('/appeal', request.url));
     }
 
-    // If accessing from admin.usgrp.xyz subdomain
-    if (host.startsWith('admin.')) {
-        // Block direct access to public appeal form from admin (use /appeals for management)
-        if (pathname === '/appeal' || pathname.startsWith('/appeal/')) {
-            return NextResponse.redirect(new URL('/dashboard', request.url));
-        }
-    }
-
-    // Auth callback should always be accessible
+    // Auth endpoints should always be accessible
     if (pathname.startsWith('/api/auth/')) {
         return NextResponse.next();
     }
 
+    // All other routes pass through normally
     return NextResponse.next();
 }
 
 export const config = {
     matcher: [
-        '/((?!api|_next/static|_next/image|favicon.ico).*)',
+        '/((?!_next/static|_next/image|favicon.ico).*)',
     ],
 };
