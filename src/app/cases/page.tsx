@@ -85,6 +85,9 @@ const Icons = {
     MessageSquare: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>,
     Eye: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>,
     Copy: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>,
+    Trash: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /></svg>,
+    Undo: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 7v6h6" /><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13" /></svg>,
+    Shield: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>,
 };
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
@@ -118,6 +121,8 @@ export default function CasesPage() {
     const [caseFilter, setCaseFilter] = useState('all');
     const [caseSearch, setCaseSearch] = useState('');
     const [loadingCases, setLoadingCases] = useState(false);
+    const [selectedCase, setSelectedCase] = useState<Case | null>(null);
+    const [caseActionLoading, setCaseActionLoading] = useState(false);
     
     // Appeals state
     const [appeals, setAppeals] = useState<Appeal[]>([]);
@@ -239,6 +244,38 @@ export default function CasesPage() {
         if (secs < 86400) return `${Math.floor(secs / 3600)}h ago`;
         if (secs < 604800) return `${Math.floor(secs / 86400)}d ago`;
         return d.toLocaleDateString();
+    };
+
+    const handleDeleteCase = async (caseId: string) => {
+        if (!confirm(`Are you sure you want to delete case ${caseId}? This cannot be undone.`)) return;
+        setCaseActionLoading(true);
+        try {
+            const res = await fetch(`/api/bot/cases/${caseId}`, { method: 'DELETE' });
+            if (res.ok) {
+                setCases(prev => prev.filter(c => c.case_id !== caseId));
+                setSelectedCase(null);
+            } else {
+                alert('Failed to delete case');
+            }
+        } catch (e) { console.error('Delete failed:', e); alert('Failed to delete case'); }
+        setCaseActionLoading(false);
+    };
+
+    const handleReverseCase = async (caseItem: Case) => {
+        if (!confirm(`Reverse the ${caseItem.action_type} action for ${caseItem.user_tag}? This will attempt to undo the punishment.`)) return;
+        setCaseActionLoading(true);
+        try {
+            const res = await fetch(`/api/bot/cases/${caseItem.case_id}/reverse`, { method: 'POST' });
+            if (res.ok) {
+                await loadCases();
+                setSelectedCase(null);
+                alert('Action reversed successfully');
+            } else {
+                const data = await res.json();
+                alert(data.error || 'Failed to reverse action');
+            }
+        } catch (e) { console.error('Reverse failed:', e); alert('Failed to reverse action'); }
+        setCaseActionLoading(false);
     };
 
     if (sessionLoading) {
@@ -516,55 +553,157 @@ export default function CasesPage() {
 
                         {/* Cases Tab */}
                         {activeTab === 'cases' && (
-                            <div className="cases-panel">
-                                <div className="panel-header">
-                                    <div className="search-box">
-                                        <Icons.Search />
-                                        <input type="text" placeholder="Search cases..." value={caseSearch} onChange={e => setCaseSearch(e.target.value)} />
+                            <>
+                                <div className="list-panel">
+                                    <div className="panel-header">
+                                        <div className="search-box">
+                                            <Icons.Search />
+                                            <input type="text" placeholder="Search cases..." value={caseSearch} onChange={e => setCaseSearch(e.target.value)} />
+                                        </div>
+                                        <div className="filter-tabs">
+                                            {['all', 'warn', 'mute', 'kick', 'ban'].map(f => (
+                                                <button key={f} className={`filter-tab ${caseFilter === f ? 'active' : ''}`} onClick={() => setCaseFilter(f)}>
+                                                    {f.charAt(0).toUpperCase() + f.slice(1)}
+                                                </button>
+                                            ))}
+                                        </div>
                                     </div>
-                                    <div className="filter-tabs">
-                                        {['all', 'warn', 'mute', 'kick', 'ban'].map(f => (
-                                            <button key={f} className={`filter-tab ${caseFilter === f ? 'active' : ''}`} onClick={() => setCaseFilter(f)}>
-                                                {f.charAt(0).toUpperCase() + f.slice(1)}
-                                            </button>
-                                        ))}
-                                    </div>
+
+                                    {loadingCases ? (
+                                        <div className="loading-state">Loading cases...</div>
+                                    ) : filteredCases.length > 0 ? (
+                                        <div className="cases-list">
+                                            {filteredCases.map(c => {
+                                                const action = ACTION_CONFIG[c.action_type] || { label: c.action_type, color: '#888', bg: 'rgba(100,100,100,0.1)' };
+                                                const isSelected = selectedCase?.case_id === c.case_id;
+                                                return (
+                                                    <div key={c.case_id} className={`case-row ${isSelected ? 'selected' : ''}`} onClick={() => setSelectedCase(c)}>
+                                                        <div className="case-left">
+                                                            <div className="case-id-row">
+                                                                <code>{c.case_id}</code>
+                                                                <span className="action-badge" style={{ background: action.bg, color: action.color }}>{action.label}</span>
+                                                            </div>
+                                                            <div className="case-user">
+                                                                <span className="user-name">{c.user_tag || c.user_id}</span>
+                                                            </div>
+                                                        </div>
+                                                        <div className="case-right">
+                                                            <span className="mod-name">{c.moderator_tag}</span>
+                                                            <span className="case-time">{formatTimeAgo(c.created_at)}</span>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    ) : (
+                                        <div className="empty-state">
+                                            <Icons.Folder />
+                                            <p>No cases found</p>
+                                            <span>Cases from moderation actions will appear here</span>
+                                        </div>
+                                    )}
                                 </div>
 
-                                {loadingCases ? (
-                                    <div className="loading-state">Loading cases...</div>
-                                ) : filteredCases.length > 0 ? (
-                                    <div className="cases-table">
-                                        <div className="table-header">
-                                            <span>Case</span>
-                                            <span>User</span>
-                                            <span>Action</span>
-                                            <span>Reason</span>
-                                            <span>Moderator</span>
-                                            <span>Date</span>
+                                {/* Case Detail Panel */}
+                                {selectedCase ? (
+                                    <div className="detail-panel">
+                                        <div className="detail-header">
+                                            <div className="detail-title">
+                                                <h2>{selectedCase.case_id}</h2>
+                                                <span className="status-badge" style={{ background: ACTION_CONFIG[selectedCase.action_type]?.bg, color: ACTION_CONFIG[selectedCase.action_type]?.color }}>
+                                                    {ACTION_CONFIG[selectedCase.action_type]?.label || selectedCase.action_type}
+                                                </span>
+                                            </div>
+                                            <button className="close-btn" onClick={() => setSelectedCase(null)}><Icons.X /></button>
                                         </div>
-                                        {filteredCases.map(c => {
-                                            const action = ACTION_CONFIG[c.action_type] || { label: c.action_type, color: '#888', bg: 'rgba(100,100,100,0.1)' };
-                                            return (
-                                                <div key={c.case_id} className="table-row">
-                                                    <span className="case-id"><code>{c.case_id}</code></span>
-                                                    <span className="user-tag">{c.user_tag || c.user_id}</span>
-                                                    <span><span className="action-badge" style={{ background: action.bg, color: action.color }}>{action.label}</span></span>
-                                                    <span className="reason">{c.reason || 'No reason'}</span>
-                                                    <span className="mod-tag">{c.moderator_tag}</span>
-                                                    <span className="date">{formatTimeAgo(c.created_at)}</span>
+
+                                        {/* Case Actions */}
+                                        <div className="quick-actions">
+                                            {(selectedCase.action_type === 'ban' || selectedCase.action_type === 'mute') && (
+                                                <button className="action-btn review" onClick={() => handleReverseCase(selectedCase)} disabled={caseActionLoading}>
+                                                    <Icons.Undo /> {selectedCase.action_type === 'ban' ? 'Unban' : 'Unmute'}
+                                                </button>
+                                            )}
+                                            <button className="action-btn" onClick={() => copyToClipboard(selectedCase.user_id)}>
+                                                <Icons.Copy /> Copy User ID
+                                            </button>
+                                            <button className="action-btn deny" onClick={() => handleDeleteCase(selectedCase.case_id)} disabled={caseActionLoading}>
+                                                <Icons.Trash /> Delete Case
+                                            </button>
+                                        </div>
+
+                                        {/* Case Details */}
+                                        <div className="detail-section">
+                                            <h4>Target User</h4>
+                                            <div className="info-grid">
+                                                <div className="info-item">
+                                                    <Icons.User />
+                                                    <div>
+                                                        <span className="label">User</span>
+                                                        <span className="value">{selectedCase.user_tag || 'Unknown'}</span>
+                                                    </div>
+                                                    <button className="copy-btn" onClick={() => copyToClipboard(selectedCase.user_id)}><Icons.Copy /></button>
                                                 </div>
-                                            );
-                                        })}
+                                                <div className="info-item">
+                                                    <Icons.Shield />
+                                                    <div>
+                                                        <span className="label">User ID</span>
+                                                        <span className="value">{selectedCase.user_id}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="detail-section">
+                                            <h4>Punishment</h4>
+                                            <div className="info-grid">
+                                                <div className="info-item">
+                                                    <Icons.AlertTriangle />
+                                                    <div>
+                                                        <span className="label">Action</span>
+                                                        <span className="value" style={{ color: ACTION_CONFIG[selectedCase.action_type]?.color }}>{selectedCase.action_type.toUpperCase()}</span>
+                                                    </div>
+                                                </div>
+                                                {selectedCase.duration && (
+                                                    <div className="info-item">
+                                                        <Icons.Clock />
+                                                        <div>
+                                                            <span className="label">Duration</span>
+                                                            <span className="value">{selectedCase.duration}</span>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                                <div className="info-item">
+                                                    <Icons.User />
+                                                    <div>
+                                                        <span className="label">Moderator</span>
+                                                        <span className="value">{selectedCase.moderator_tag}</span>
+                                                    </div>
+                                                </div>
+                                                <div className="info-item">
+                                                    <Icons.Clock />
+                                                    <div>
+                                                        <span className="label">Date</span>
+                                                        <span className="value">{new Date(selectedCase.created_at).toLocaleString()}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="detail-section">
+                                            <h4>Reason</h4>
+                                            <div className="appeal-message">
+                                                <p>{selectedCase.reason || 'No reason provided'}</p>
+                                            </div>
+                                        </div>
                                     </div>
                                 ) : (
-                                    <div className="empty-state full">
+                                    <div className="detail-panel empty">
                                         <Icons.Folder />
-                                        <p>No cases found</p>
-                                        <span>Cases from moderation actions will appear here</span>
+                                        <p>Select a case to view details</p>
                                     </div>
                                 )}
-                            </div>
+                            </>
                         )}
                     </div>
                 </div>
@@ -653,7 +792,20 @@ export default function CasesPage() {
                 .appeal-status { font-size: 11px; font-weight: 600; padding: 4px 8px; border-radius: 4px; text-transform: uppercase; }
                 .appeal-time { font-size: 11px; color: var(--text-dim); }
 
-                .detail-panel { display: flex; flex-direction: column; }
+                .cases-list { flex: 1; overflow-y: auto; }
+                .case-row { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border-bottom: 1px solid var(--border-subtle); cursor: pointer; transition: background 0.1s; }
+                .case-row:hover { background: var(--bg-hover); }
+                .case-row.selected { background: rgba(59, 130, 246, 0.1); border-left: 3px solid #3b82f6; }
+                .case-left { display: flex; flex-direction: column; gap: 4px; }
+                .case-id-row { display: flex; align-items: center; gap: 8px; }
+                .case-id-row code { font-size: 12px; color: #60a5fa; background: rgba(59, 130, 246, 0.1); padding: 2px 6px; border-radius: 4px; }
+                .case-user { display: flex; align-items: center; gap: 8px; }
+                .case-user .user-name { font-size: 14px; color: var(--text-primary); font-weight: 500; }
+                .case-right { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+                .case-right .mod-name { font-size: 12px; color: var(--text-muted); }
+                .case-time { font-size: 11px; color: var(--text-dim); }
+
+                .detail-panel { display: flex; flex-direction: column; overflow-y: auto; }
                 .detail-panel.empty { align-items: center; justify-content: center; color: var(--text-muted); }
                 .detail-panel.empty :global(svg) { width: 48px; height: 48px; margin-bottom: 16px; opacity: 0.3; }
                 .detail-panel.empty p { font-size: 15px; margin: 0; }
@@ -667,7 +819,8 @@ export default function CasesPage() {
                 .close-btn :global(svg) { width: 18px; height: 18px; }
 
                 .quick-actions { display: flex; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--border-subtle); background: var(--bg-hover); }
-                .action-btn { display: flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; border: 1px solid; transition: all 0.15s; }
+                .action-btn { display: flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; border: 1px solid var(--border-subtle); background: var(--bg-elevated); color: var(--text-secondary); transition: all 0.15s; }
+                .action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
                 .action-btn :global(svg) { width: 14px; height: 14px; }
                 .action-btn.review { background: rgba(59, 130, 246, 0.1); border-color: rgba(59, 130, 246, 0.3); color: #60a5fa; }
                 .action-btn.approve { background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.3); color: #10b981; }

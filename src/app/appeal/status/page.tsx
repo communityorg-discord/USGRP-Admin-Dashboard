@@ -142,12 +142,18 @@ export default function AppealStatusPage() {
 
             <style jsx>{`
                 .status-page {
-                    min-height: 100vh;
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
                     background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #0f0f1a 100%);
                     display: flex;
-                    align-items: center;
+                    align-items: flex-start;
                     justify-content: center;
                     padding: 40px 20px;
+                    overflow-y: auto;
+                    -webkit-overflow-scrolling: touch;
                 }
 
                 .status-container {
