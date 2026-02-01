@@ -264,12 +264,12 @@ export default function LoginPage() {
                     max-width: 1100px;
                     min-height: 600px;
                     margin: 24px;
-                    background: rgba(20, 20, 30, 0.6);
+                    background: rgba(15, 15, 25, 0.4);
                     backdrop-filter: blur(40px);
-                    border: 1px solid rgba(255, 255, 255, 0.08);
+                    border: 1px solid rgba(255, 255, 255, 0.04);
                     border-radius: 24px;
                     overflow: hidden;
-                    box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.5);
+                    box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.4);
                     position: relative;
                     z-index: 1;
                 }
@@ -280,8 +280,8 @@ export default function LoginPage() {
                     display: flex;
                     flex-direction: column;
                     justify-content: center;
-                    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1));
-                    border-right: 1px solid rgba(255, 255, 255, 0.05);
+                    background: transparent;
+                    border-right: none;
                 }
 
                 .brand-content {
@@ -602,8 +602,7 @@ export default function LoginPage() {
 
                     .brand-side {
                         padding: 32px;
-                        border-right: none;
-                        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+                        border-bottom: none;
                     }
 
                     .brand-content {
