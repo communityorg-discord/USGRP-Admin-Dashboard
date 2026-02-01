@@ -16,6 +16,8 @@ export async function GET() {
         const validation = await validateAuthToken(session.authToken);
 
         if (!validation.valid) {
+            // Token is invalid or session expired on auth service
+            // Clear local session to prevent repeated failed validations
             session.isLoggedIn = false;
             session.authToken = undefined;
             session.user = undefined;
@@ -23,9 +25,14 @@ export async function GET() {
 
             return NextResponse.json({
                 authenticated: false,
+                sessionExpired: true,
                 error: validation.error
             });
         }
+
+        // Update last activity
+        session.lastActivity = Date.now();
+        await session.save();
 
         return NextResponse.json({
             authenticated: true,
@@ -34,6 +41,6 @@ export async function GET() {
 
     } catch (error: unknown) {
         console.error('Session check error:', error);
-        return NextResponse.json({ authenticated: false });
+        return NextResponse.json({ authenticated: false, error: 'Session check failed' });
     }
 }
