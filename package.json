@@ -9,7 +9,9 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@types/bcryptjs": "^2.4.6",
     "@types/better-sqlite3": "^7.6.13",
+    "bcryptjs": "^3.0.3",
     "better-sqlite3": "^12.6.2",
     "imapflow": "^1.2.6",
     "iron-session": "^8.0.4",
