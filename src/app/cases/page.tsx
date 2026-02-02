@@ -262,10 +262,17 @@ export default function CasesPage() {
     };
 
     const handleReverseCase = async (caseItem: Case) => {
-        if (!confirm(`Reverse the ${caseItem.action_type} action for ${caseItem.user_tag}? This will attempt to undo the punishment.`)) return;
+        if (!confirm(`Reverse the ${caseItem.action_type} action for ${caseItem.user_tag || caseItem.user_id}? This will attempt to undo the punishment.`)) return;
         setCaseActionLoading(true);
         try {
-            const res = await fetch(`/api/bot/cases/${caseItem.case_id}/reverse`, { method: 'POST' });
+            const res = await fetch(`/api/bot/cases/${caseItem.case_id}/reverse`, { 
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user_id: caseItem.user_id,
+                    action_type: caseItem.action_type,
+                }),
+            });
             if (res.ok) {
                 await loadCases();
                 setSelectedCase(null);

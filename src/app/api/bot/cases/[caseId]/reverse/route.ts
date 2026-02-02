@@ -45,19 +45,16 @@ export async function POST(
         }
 
         const { caseId } = await params;
+        
+        // Get case data from request body (since bot API doesn't have individual case endpoint)
+        const body = await request.json().catch(() => ({}));
+        const { user_id, action_type } = body;
 
-        // Get the case first
-        const caseResponse = await fetch(`${BOT_API_URL}/api/cases/${caseId}`, {
-            headers: { 'X-Admin-Key': BOT_API_KEY },
-            cache: 'no-store'
-        });
-
-        if (!caseResponse.ok) {
-            return NextResponse.json({ error: 'Case not found' }, { status: 404 });
+        if (!user_id || !action_type) {
+            return NextResponse.json({ 
+                error: 'Missing case data - user_id and action_type required' 
+            }, { status: 400 });
         }
-
-        const caseData = await caseResponse.json();
-        const { user_id, action_type } = caseData;
 
         // Only ban and mute can be reversed
         if (!['ban', 'mute'].includes(action_type)) {
@@ -80,8 +77,11 @@ export async function POST(
             );
 
             if (!unbanResponse.ok && unbanResponse.status !== 404) {
-                console.error('Discord unban failed:', await unbanResponse.text());
-                return NextResponse.json({ error: 'Failed to unban user on Discord' }, { status: 500 });
+                const errorText = await unbanResponse.text();
+                console.error('Discord unban failed:', errorText);
+                return NextResponse.json({ 
+                    error: `Failed to unban user on Discord: ${unbanResponse.status}` 
+                }, { status: 500 });
             }
         } else if (action_type === 'mute') {
             // Remove timeout from user
@@ -98,12 +98,15 @@ export async function POST(
             );
 
             if (!unmuteResponse.ok) {
-                console.error('Discord unmute failed:', await unmuteResponse.text());
-                return NextResponse.json({ error: 'Failed to unmute user on Discord' }, { status: 500 });
+                const errorText = await unmuteResponse.text();
+                console.error('Discord unmute failed:', errorText);
+                return NextResponse.json({ 
+                    error: `Failed to unmute user on Discord: ${unmuteResponse.status}` 
+                }, { status: 500 });
             }
         }
 
-        // Update case status via bot API
+        // Try to update case status via bot API (optional - may not exist)
         await fetch(`${BOT_API_URL}/api/cases/${caseId}/reverse`, {
             method: 'POST',
             headers: { 
