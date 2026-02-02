@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
+import { getIronSession } from 'iron-session';
 import { cookies } from 'next/headers';
+import { sessionOptions, SessionData } from '@/lib/session';
 
 // Bot API configuration
 const BOT_API_URL = 'http://localhost:3320';
@@ -9,41 +11,41 @@ const BOT_API_KEY = 'usgrp-admin-2026-secure-key-x7k9m2p4';
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN || '';
 const GUILD_ID = process.env.DISCORD_GUILD_ID || '1458621643537514590';
 
-async function validateSession() {
-    const cookieStore = await cookies();
-    const sessionToken = cookieStore.get('admin_session')?.value;
-    if (!sessionToken) return null;
-    
-    try {
-        const res = await fetch(`${process.env.AUTH_URL || 'https://auth.usgrp.xyz'}/api/session`, {
-            headers: { 'Authorization': `Bearer ${sessionToken}` },
-            cache: 'no-store',
-        });
-        if (!res.ok) return null;
-        return await res.json();
-    } catch {
-        return null;
-    }
-}
+// Allowed roles for case reversal
+const ALLOWED_ROLES = [
+    'Senior Administration',
+    'Developer', 
+    'President',
+    'Chief of Staff',
+    'Vice President',
+];
 
 export async function POST(
     request: Request,
     { params }: { params: Promise<{ caseId: string }> }
 ) {
-    const session = await validateSession();
-    if (!session) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Only Senior Admin+ can reverse cases
-    const allowedRoles = ['Senior Administration', 'Developer', 'President'];
-    if (!session.roles?.some((r: string) => allowedRoles.includes(r))) {
-        return NextResponse.json({ error: 'Insufficient permissions - Senior Admin+ required' }, { status: 403 });
-    }
-
-    const { caseId } = await params;
-
     try {
+        // Auth check using iron-session (same as other endpoints)
+        const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+        
+        if (!session.isLoggedIn || !session.user) {
+            return NextResponse.json({ error: 'Unauthorized - Not logged in' }, { status: 401 });
+        }
+
+        // Check roles - need Senior Admin+ or specific positions
+        const userRoles = session.user.roles || [];
+        const hasPermission = ALLOWED_ROLES.some(role => userRoles.includes(role)) || 
+                              (session.user.authorityLevel && session.user.authorityLevel >= 4);
+        
+        if (!hasPermission) {
+            return NextResponse.json({ 
+                error: 'Insufficient permissions - Senior Admin+ required',
+                yourRoles: userRoles,
+            }, { status: 403 });
+        }
+
+        const { caseId } = await params;
+
         // Get the case first
         const caseResponse = await fetch(`${BOT_API_URL}/api/cases/${caseId}`, {
             headers: { 'X-Admin-Key': BOT_API_KEY },
@@ -109,12 +111,12 @@ export async function POST(
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({ 
-                reversed_by: session.discordId,
-                reversed_by_name: session.username,
+                reversed_by: session.user.discordId || session.user.email,
+                reversed_by_name: session.user.displayName || session.user.email,
             }),
         }).catch(() => {}); // Don't fail if bot API doesn't support this
 
-        console.log(`[CASE REVERSE] Case ${caseId} (${action_type}) reversed by ${session.username} (${session.discordId}) for user ${user_id}`);
+        console.log(`[CASE REVERSE] Case ${caseId} (${action_type}) reversed by ${session.user.displayName} (${session.user.discordId}) for user ${user_id}`);
 
         return NextResponse.json({ 
             success: true, 

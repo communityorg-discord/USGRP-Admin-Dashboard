@@ -261,15 +261,15 @@ export default function LoginPage() {
                 .login-container {
                     display: flex;
                     width: 100%;
-                    max-width: 1100px;
-                    min-height: 600px;
-                    margin: 24px;
+                    max-width: none;
+                    min-height: 100vh;
+                    margin: 0;
                     background: rgba(15, 15, 25, 0.4);
                     backdrop-filter: blur(40px);
-                    border: 1px solid rgba(255, 255, 255, 0.04);
-                    border-radius: 24px;
+                    border: none;
+                    border-radius: 0;
                     overflow: hidden;
-                    box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.4);
+                    box-shadow: none;
                     position: relative;
                     z-index: 1;
                 }
@@ -597,7 +597,7 @@ export default function LoginPage() {
                 @media (max-width: 900px) {
                     .login-container {
                         flex-direction: column;
-                        max-width: 480px;
+                        max-width: none;
                     }
 
                     .brand-side {
@@ -629,8 +629,8 @@ export default function LoginPage() {
 
                 @media (max-width: 500px) {
                     .login-container {
-                        margin: 16px;
-                        border-radius: 20px;
+                        margin: 0;
+                        border-radius: 0;
                     }
 
                     .brand-side,

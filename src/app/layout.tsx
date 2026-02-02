@@ -10,6 +10,15 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "USGRP Admin Dashboard",
   description: "Government Utilities Administration",
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/logo.png",
+  },
+  openGraph: {
+    title: "USGRP Admin Dashboard",
+    description: "Government Utilities Administration",
+    images: ["/logo.png"],
+  },
 };
 
 export default function RootLayout({

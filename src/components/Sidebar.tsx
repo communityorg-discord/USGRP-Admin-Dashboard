@@ -218,7 +218,7 @@ export default function Sidebar({ session, onLogout }: SidebarProps) {
                 <div className="sidebar-header">
                     <div className="logo">
                         <div className="logo-icon">
-                            <span>U</span>
+                            <img src="/logo.png" alt="USGRP" style={{width: '40px', height: '40px', objectFit: 'contain'}} />
                         </div>
                         <div className="logo-text">
                             <span className="logo-title">USGRP</span>

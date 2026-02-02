@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Sidebar from '@/components/Sidebar';
 import Modal from '@/components/Modal';
+import UserSearch from '@/components/UserSearch';
 import { useSession } from '@/hooks/useSession';
 
 interface Stats {
@@ -20,6 +21,22 @@ interface Case {
     reason: string;
     created_at: string;
     moderator_tag: string;
+}
+
+interface SystemStatus {
+    services: Array<{ name: string; status: string; memory: number; cpu: number; uptime: number; restarts: number }>;
+    disk: { used: number; total: number; percent: number };
+    memory: { used: number; total: number; percent: number };
+    uptime: number;
+}
+
+interface EconomyStats {
+    totalCitizens: number;
+    totalWealth: number;
+    avgWealth: number;
+    topCitizens: Array<{ username: string; balance: number }>;
+    recentTransactions: number;
+    treasury: number;
 }
 
 // Icons
@@ -77,13 +94,34 @@ const Icons = {
             <line x1="12" y1="8" x2="12" y2="12" />
             <line x1="12" y1="16" x2="12.01" y2="16" />
         </svg>
-    )
+    ),
+    Server: () => (
+        <svg className="quick-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <rect x="2" y="3" width="20" height="14" rx="2" />
+            <line x1="8" y1="21" x2="16" y2="21" />
+            <line x1="12" y1="17" x2="12" y2="21" />
+        </svg>
+    ),
+    Dollar: () => (
+        <svg className="quick-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <line x1="12" y1="1" x2="12" y2="23" />
+            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+        </svg>
+    ),
+    Refresh: () => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ width: 16, height: 16 }}>
+            <polyline points="23 4 23 10 17 10" />
+            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+        </svg>
+    ),
 };
 
 export default function DashboardPage() {
     const { session, loading: sessionLoading, logout } = useSession();
     const [stats, setStats] = useState<Stats | null>(null);
     const [recentCases, setRecentCases] = useState<Case[]>([]);
+    const [systemStatus, setSystemStatus] = useState<SystemStatus | null>(null);
+    const [economyStats, setEconomyStats] = useState<EconomyStats | null>(null);
     const [currentTime, setCurrentTime] = useState(new Date());
 
     // Modal state
@@ -98,11 +136,22 @@ export default function DashboardPage() {
         return () => clearInterval(timer);
     }, []);
 
-    useEffect(() => {
+    const fetchAllData = () => {
         if (session) {
             fetch('/api/bot/stats').then(r => r.ok ? r.json() : null).then(d => d && setStats(d)).catch(() => { });
             fetch('/api/bot/cases').then(r => r.ok ? r.json() : []).then(setRecentCases).catch(() => { });
+            fetch('/api/system/status').then(r => r.ok ? r.json() : null).then(d => d && setSystemStatus(d)).catch(() => { });
+            fetch('/api/economy/stats').then(r => r.ok ? r.json() : null).then(d => d && setEconomyStats(d)).catch(() => { });
         }
+    };
+
+    useEffect(() => {
+        fetchAllData();
+        // Refresh system status every 30 seconds
+        const interval = setInterval(() => {
+            fetch('/api/system/status').then(r => r.ok ? r.json() : null).then(d => d && setSystemStatus(d)).catch(() => { });
+        }, 30000);
+        return () => clearInterval(interval);
     }, [session]);
 
     const handleCaseClick = (c: Case) => {
@@ -147,6 +196,32 @@ export default function DashboardPage() {
         if (!n) return '0';
         return n.toLocaleString();
     };
+
+    const formatMoney = (n: number | undefined) => {
+        if (!n) return '$0';
+        return '$' + n.toLocaleString();
+    };
+
+    const formatUptime = (seconds: number) => {
+        const days = Math.floor(seconds / 86400);
+        const hours = Math.floor((seconds % 86400) / 3600);
+        const mins = Math.floor((seconds % 3600) / 60);
+        if (days > 0) return `${days}d ${hours}h`;
+        if (hours > 0) return `${hours}h ${mins}m`;
+        return `${mins}m`;
+    };
+
+    const getStatusColor = (status: string) => {
+        switch (status) {
+            case 'online': return '#10b981';
+            case 'stopped': return '#f59e0b';
+            case 'errored': return '#ef4444';
+            default: return '#6b7280';
+        }
+    };
+
+    const onlineCount = systemStatus?.services.filter(s => s.status === 'online').length || 0;
+    const totalServices = systemStatus?.services.length || 0;
 
     return (
         <div className="admin-layout">
@@ -216,6 +291,112 @@ export default function DashboardPage() {
                         </div>
                     </section>
 
+                    {/* System Status Row */}
+                    <section className="content-grid" style={{ marginBottom: '24px' }}>
+                        {/* System Status */}
+                        <div className="card">
+                            <div className="card-header">
+                                <h3 className="card-title">🖥️ System Status</h3>
+                                <button className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '12px' }} onClick={fetchAllData}>
+                                    <Icons.Refresh /> Refresh
+                                </button>
+                            </div>
+                            {systemStatus ? (
+                                <div style={{ padding: '16px' }}>
+                                    {/* Services Overview */}
+                                    <div style={{ marginBottom: '16px', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                                        <div style={{ flex: 1, minWidth: '120px', padding: '12px', background: 'var(--bg-primary)', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
+                                            <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>Services</div>
+                                            <div style={{ fontSize: '18px', fontWeight: 600, color: onlineCount === totalServices ? '#10b981' : '#f59e0b' }}>
+                                                {onlineCount}/{totalServices} Online
+                                            </div>
+                                        </div>
+                                        <div style={{ flex: 1, minWidth: '120px', padding: '12px', background: 'var(--bg-primary)', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
+                                            <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>Disk</div>
+                                            <div style={{ fontSize: '18px', fontWeight: 600, color: systemStatus.disk.percent > 85 ? '#ef4444' : 'var(--text-primary)' }}>
+                                                {systemStatus.disk.used}GB / {systemStatus.disk.total}GB
+                                            </div>
+                                            <div style={{ marginTop: '4px', height: '4px', background: 'var(--border-subtle)', borderRadius: '2px', overflow: 'hidden' }}>
+                                                <div style={{ height: '100%', width: `${systemStatus.disk.percent}%`, background: systemStatus.disk.percent > 85 ? '#ef4444' : '#10b981', borderRadius: '2px' }} />
+                                            </div>
+                                        </div>
+                                        <div style={{ flex: 1, minWidth: '120px', padding: '12px', background: 'var(--bg-primary)', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
+                                            <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>Memory</div>
+                                            <div style={{ fontSize: '18px', fontWeight: 600, color: systemStatus.memory.percent > 85 ? '#ef4444' : 'var(--text-primary)' }}>
+                                                {systemStatus.memory.used}GB / {systemStatus.memory.total}GB
+                                            </div>
+                                            <div style={{ marginTop: '4px', height: '4px', background: 'var(--border-subtle)', borderRadius: '2px', overflow: 'hidden' }}>
+                                                <div style={{ height: '100%', width: `${systemStatus.memory.percent}%`, background: systemStatus.memory.percent > 85 ? '#ef4444' : '#3b82f6', borderRadius: '2px' }} />
+                                            </div>
+                                        </div>
+                                        <div style={{ flex: 1, minWidth: '120px', padding: '12px', background: 'var(--bg-primary)', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
+                                            <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>Uptime</div>
+                                            <div style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                                                {formatUptime(systemStatus.uptime)}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {/* Services List */}
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '8px' }}>
+                                        {systemStatus.services.slice(0, 12).map((s) => (
+                                            <div key={s.name} style={{ padding: '10px', background: 'var(--bg-primary)', borderRadius: '6px', border: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: getStatusColor(s.status), flexShrink: 0 }} />
+                                                <div style={{ flex: 1, minWidth: 0 }}>
+                                                    <div style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.name}</div>
+                                                    <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{s.memory}MB • {s.restarts} restarts</div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="empty-state">Loading system status...</div>
+                            )}
+                        </div>
+
+                        {/* Economy Overview */}
+                        <div className="card">
+                            <div className="card-header">
+                                <h3 className="card-title">💰 Economy Overview</h3>
+                            </div>
+                            {economyStats ? (
+                                <div style={{ padding: '16px' }}>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+                                        <div style={{ padding: '12px', background: 'var(--bg-primary)', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
+                                            <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>Total Citizens</div>
+                                            <div style={{ fontSize: '20px', fontWeight: 600, color: 'var(--accent-primary)' }}>{formatNumber(economyStats.totalCitizens)}</div>
+                                        </div>
+                                        <div style={{ padding: '12px', background: 'var(--bg-primary)', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
+                                            <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>Total Wealth</div>
+                                            <div style={{ fontSize: '20px', fontWeight: 600, color: '#10b981' }}>{formatMoney(economyStats.totalWealth)}</div>
+                                        </div>
+                                        <div style={{ padding: '12px', background: 'var(--bg-primary)', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
+                                            <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>Avg Wealth</div>
+                                            <div style={{ fontSize: '20px', fontWeight: 600, color: 'var(--text-primary)' }}>{formatMoney(economyStats.avgWealth)}</div>
+                                        </div>
+                                        <div style={{ padding: '12px', background: 'var(--bg-primary)', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
+                                            <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>Treasury</div>
+                                            <div style={{ fontSize: '20px', fontWeight: 600, color: '#f59e0b' }}>{formatMoney(economyStats.treasury)}</div>
+                                        </div>
+                                    </div>
+                                    {/* Top Citizens */}
+                                    <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase' }}>Top Citizens</div>
+                                    {economyStats.topCitizens.map((c, i) => (
+                                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: i < economyStats.topCitizens.length - 1 ? '1px solid var(--border-subtle)' : 'none' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <span style={{ fontWeight: 600, color: i < 3 ? '#f59e0b' : 'var(--text-muted)', minWidth: '20px' }}>#{i + 1}</span>
+                                                <span style={{ fontSize: '13px', color: 'var(--text-primary)' }}>{c.username}</span>
+                                            </div>
+                                            <span style={{ fontSize: '13px', fontWeight: 500, color: '#10b981' }}>{formatMoney(c.balance)}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="empty-state">Loading economy data...</div>
+                            )}
+                        </div>
+                    </section>
+
                     {/* Content Grid */}
                     <section className="content-grid">
                         {/* Recent Cases */}
@@ -275,6 +456,16 @@ export default function DashboardPage() {
                                     <Icons.Ban />
                                     Ban User
                                 </button>
+                            </div>
+
+                            <div className="card-header" style={{ marginTop: '8px' }}>
+                                <h3 className="card-title">🔍 Quick User Search</h3>
+                            </div>
+                            <div style={{ padding: '16px' }}>
+                                <UserSearch 
+                                    placeholder="Search by username or ID..."
+                                    onSelect={(user) => window.location.href = `/users?id=${user.user_id}`}
+                                />
                             </div>
 
                             <div className="card-header" style={{ marginTop: '8px' }}>
